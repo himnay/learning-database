@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/learningdb
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: learning-db-pool
+      maximum-pool-size: 10           # max concurrent DB connections
+      minimum-idle: 2                 # keep at least 2 alive at all times
+      idle-timeout: 30000             # remove idle connection after 30s
+      max-lifetime: 1800000           # max connection lifetime 30min (rotate before DB closes it)
+      connection-timeout: 20000       # throw if no connection available after 20s
+      leak-detection-threshold: 5000  # warn if a connection is held for > 5s (helps find leaks)
+      auto-commit: true               # Spring manages transactions — default is fine
+
+  jpa:
+    hibernate:
+      ddl-auto: none                  # Flyway owns the schema; Hibernate must not touch it
+    show-sql: true
+    open-in-view: false               # avoid lazy loading outside @Transactional (best practice)
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect   # explicit — don't rely on auto-detection
+        jdbc:
+          batch_size: 50              # JDBC batch size for saveAll() / batchUpdate
+          fetch_size: 50              # hint to JDBC driver for cursor-based streaming
+          time_zone: UTC
+        order_inserts: true           # reorder INSERTs by entity type to maximise batching
+        order_updates: true           # reorder UPDATEs by entity type to maximise batching
+        generate_statistics: false    # set to true to see query counts in logs (dev only)
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true         # fail fast if migration checksums don't match
+
+server:
+  port: 8080
