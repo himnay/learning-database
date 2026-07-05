@@ -3,6 +3,50 @@
 A self-contained learning project covering **SQL interview questions** and every major **Spring Data JPA concept**.  
 All tables are created and seeded automatically by Flyway on startup.
 
+## Why this project exists
+
+Most tutorials teach JPA or SQL in isolation, with toy examples that never touch the messy edges you actually run into in production: what happens when two transactions update the same row at the same time, why a perfectly reasonable-looking loop over a `@OneToMany` collection quietly turns into hundreds of SQL statements, or why an `INSERT` inside a rolled-back transaction can still leave an audit trail behind. This repository is built the other way around: every concept below is backed by a real, runnable table, entity, repository, or service class in `src/main/java`, seeded by a real Flyway migration in `src/main/resources/db/migration`. Nothing in this document describes a feature that isn't present in the code — every code block is either copied verbatim from a source file (with the exact file and line range noted) or is the literal SQL Hibernate/Flyway generates for that code.
+
+The project sits at the intersection of three layers that most JPA discussions blur together:
+
+1. **The relational model** — how PostgreSQL physically stores rows, indexes, and constraints (Flyway migrations `V1`–`V10`).
+2. **The ORM mapping layer** — how Hibernate/JPA annotations translate Java object graphs into that relational model, and the leaks in that abstraction (N+1 queries, locking, inheritance, auditing).
+3. **The transactional/concurrency layer** — what guarantees the database gives you when multiple requests touch the same data concurrently, and how Spring's `@Transactional` exposes (and sometimes hides) those guarantees.
+
+### Architecture at a glance
+
+```mermaid
+flowchart TB
+    subgraph App["Spring Boot Application"]
+        direction TB
+        REPO["Spring Data Repositories<br/>(JpaRepository, JpaSpecificationExecutor)"]
+        SVC["Services<br/>(ProductService, TransactionDemoService,<br/>AuditLogService, JdbcDemoService)"]
+        JDBC["JdbcTemplate / NamedParameterJdbcTemplate<br/>(JdbcDemoService)"]
+        HIB["Hibernate / JPA Provider<br/>(entity mapping, dirty checking,<br/>1st-level cache, lazy proxies)"]
+        SVC --> REPO
+        SVC --> JDBC
+        REPO --> HIB
+    end
+
+    subgraph Pool["HikariCP Connection Pool"]
+        CONN1[(conn)]
+        CONN2[(conn)]
+        CONN3[(conn)]
+    end
+
+    subgraph DB["PostgreSQL 16 (Docker)"]
+        TBL[("Tables created &amp;\nseeded by Flyway\nV1 … V10")]
+    end
+
+    HIB --> Pool
+    JDBC --> Pool
+    Pool --> DB
+
+    FLY["Flyway"] -. "runs once at startup,\nbefore the app serves traffic" .-> DB
+```
+
+At startup, Flyway inspects `db/migration`, compares each script's checksum against a `flyway_schema_history` table it maintains inside `learningdb`, and applies any migration that hasn't run yet — in strict version order (`V1` → `V10`). Only after all migrations succeed does Spring Boot finish context initialization and start accepting requests. Every table, index, function, and seed row you see in this document is produced by that process — there is no manual setup step.
+
 ---
 
 ## Table of Contents
@@ -196,6 +240,30 @@ learning-database/
 
 ## 3. Flyway Migrations
 
+Flyway is a **schema-as-code / migration-based** tool: instead of a DBA hand-editing the schema (or an ORM's `ddl-auto=update` silently guessing at changes), every structural change to the database is captured as an immutable, version-numbered SQL script committed to source control alongside the application code. This matters for a few concrete reasons this repo actually exercises:
+
+- **Reproducibility** — anyone who clones the repo and runs `docker compose up -d && mvn spring-boot:run` gets byte-for-byte the same schema and seed data, because the migrations are the single source of truth (see `V1`–`V10` below).
+- **Auditability** — Flyway records every applied migration, its checksum, and its execution time in a `flyway_schema_history` table. If a script is edited after being applied, the checksum mismatch causes the next startup to fail loudly rather than silently drift.
+- **Safe incremental evolution** — `V10__additional_columns.sql` demonstrates this directly: rather than rewriting `V8`'s `product` table definition, a brand-new migration *adds* a `priority` column and a new `stock_item` table. Production schemas are never edited retroactively; they only move forward.
+- **Ordering guarantees** — migrations are versioned (`V1`, `V2`, … `V10`) so dependent objects are always created after what they depend on. `V6` (relationship tables) must run before any entity referencing `jpa_customer`/`jpa_order` can be persisted; `V9` (stored procedures) references columns created back in `V2`.
+
+```mermaid
+flowchart LR
+    START(["App starts"]) --> CHECK{"flyway_schema_history\ntable exists?"}
+    CHECK -- "no" --> CREATE["Create history table"]
+    CHECK -- "yes" --> SCAN
+    CREATE --> SCAN["Scan db/migration/*.sql,\nsort by version"]
+    SCAN --> V1["V1 create_departments"] --> V2["V2 create_employees"] --> V3["V3 create_emp_test"]
+    V3 --> V4["V4 create_scores"] --> V5["V5 create_deliveries"] --> V6["V6 jpa_relationship_tables"]
+    V6 --> V7["V7 jpa_inheritance_tables"] --> V8["V8 jpa_other_tables"] --> V9["V9 stored_procedures"]
+    V9 --> V10["V10 additional_columns"]
+    V10 --> DONE(["Schema ready —\nSpring context finishes,\napp accepts traffic"])
+
+    style CHECK fill:#333,stroke:#999,color:#fff
+```
+
+Each script only ever runs once per database (tracked by version number in `flyway_schema_history`); re-running `mvn spring-boot:run` against an already-migrated database is a no-op for schema changes.
+
 | Version | File | What it creates |
 |---|---|---|
 | V1 | `create_departments.sql` | `departments` table + 4 rows |
@@ -257,6 +325,23 @@ GROUP BY d.dept_name;
 **Key concept:** SQL execution order is `FROM → WHERE → GROUP BY → HAVING → SELECT`.  
 `WHERE` runs **before** grouping, so it cannot filter on aggregate functions. Use `HAVING` instead.
 
+This is the single most useful mental model for debugging "why doesn't my query work" — SQL is written in one order (`SELECT … FROM … WHERE … GROUP BY … HAVING … ORDER BY`) but a database engine *executes* the clauses in a completely different, fixed logical order. Understanding this order explains several PostgreSQL/SQL behaviours used throughout this repo: why a column alias defined in `SELECT` can't be reused in the same query's `WHERE` clause, why `GROUP BY` must appear before you can reference an aggregate in `HAVING`, and why window functions (Q3, Q8, Q9) are evaluated *after* `WHERE`/`GROUP BY` but *before* `ORDER BY`/`LIMIT` — which is exactly why Q5 has to wrap a windowed/DISTINCT query in a subquery before applying `LIMIT`.
+
+```mermaid
+flowchart TD
+    A["1. FROM / JOIN\n(build the working row set)"] --> B["2. WHERE\n(filter individual rows — no aggregates allowed)"]
+    B --> C["3. GROUP BY\n(collapse rows into groups)"]
+    C --> D["4. HAVING\n(filter groups — aggregates allowed)"]
+    D --> E["5. Window functions\n(ROW_NUMBER, RANK, LAG/LEAD, NTILE —\nsee Q3, Q8, Q9)"]
+    E --> F["6. SELECT\n(compute output expressions / aliases)"]
+    F --> G["7. DISTINCT"]
+    G --> H["8. ORDER BY\n(can reference SELECT aliases)"]
+    H --> I["9. LIMIT / OFFSET"]
+
+    style B fill:#7a3b3b,color:#fff
+    style D fill:#3b6b3b,color:#fff
+```
+
 ```sql
 -- WRONG: WHERE cannot reference COUNT(*) because grouping hasn't happened yet
 SELECT dept_id, COUNT(*)
@@ -282,6 +367,20 @@ HAVING COUNT(*) > 2;  -- ✅ Engineering (4) and Sales (3)
 | `ROW_NUMBER()` | Always unique — arbitrary order for ties | N/A |
 | `RANK()` | Same rank for ties | Yes — skips the next number |
 | `DENSE_RANK()` | Same rank for ties | No — continuous numbering |
+
+**Why this matters:** window functions (the `OVER (...)` clause) let you compute a value across a *set of related rows* — a "window" — without collapsing those rows into one, the way `GROUP BY` would. `PARTITION BY` (not used in this simple example, but used implicitly by the single global window here) defines which rows belong to the same window; `ORDER BY` inside `OVER (...)` defines the order used to compute the ranking/offset for each row. This is what lets Q3, Q8, and Q9 answer "rank/percentile/previous value *within this group*" in a single pass over the table instead of a self-join or application-side loop.
+
+```mermaid
+flowchart LR
+    subgraph W["Window defined by OVER (ORDER BY salary DESC)"]
+        direction TB
+        R1["A — 5000"] --> R2["B — 4000"] --> R3["C — 4000"] --> R4["D — 3000"]
+    end
+    R1 -.->|"ROW_NUMBER=1<br/>RANK=1<br/>DENSE_RANK=1"| O1[" "]
+    R2 -.->|"ROW_NUMBER=2<br/>RANK=2<br/>DENSE_RANK=2"| O2[" "]
+    R3 -.->|"ROW_NUMBER=3<br/>RANK=2 (tie)<br/>DENSE_RANK=2 (tie)"| O3[" "]
+    R4 -.->|"ROW_NUMBER=4<br/>RANK=4 (gap!)<br/>DENSE_RANK=3 (no gap)"| O4[" "]
+```
 
 ```sql
 SELECT
@@ -525,7 +624,9 @@ Repository
 
 ### 5.4 Relationships & Associations
 
-Every relationship has an **owning side** (holds the FK column) and an **inverse side** (uses `mappedBy`).
+Every relationship has an **owning side** (holds the FK column, and is the side Hibernate actually issues `INSERT`/`UPDATE` statements for when the association changes) and an **inverse side** (declares `mappedBy` and is purely a read-time convenience — writing to it alone does nothing to the database). Getting this backwards is one of the most common JPA bugs: setting a value only on the inverse side of a relationship persists nothing, because Hibernate only looks at the owning side's FK field when deciding what SQL to generate.
+
+The underlying relational rule is simple and predates ORMs entirely: **a foreign key column always lives on the "many" (or the referencing) side of a relationship.** JPA's owning/inverse distinction is just a mapping of that relational fact onto two Java classes that both want to reference each other.
 
 #### @OneToOne — Bidirectional
 
@@ -533,8 +634,26 @@ Every relationship has an **owning side** (holds the FK column) and an **inverse
 jpa_user (id, name, email, address_id FK)  ←→  jpa_address (id, street, city, zip)
 ```
 
+```mermaid
+erDiagram
+    JPA_USER {
+        bigint id PK
+        varchar name
+        varchar email
+        bigint address_id FK "UNIQUE — owning side's FK"
+    }
+    JPA_ADDRESS {
+        bigint id PK
+        varchar street
+        varchar city
+        varchar zip
+    }
+    JPA_USER ||--|| JPA_ADDRESS : "address_id → id"
+```
+
 - `UserEntity` owns the FK (`address_id`) → owning side → has `@JoinColumn`
 - `AddressEntity` is the inverse side → has `@OneToOne(mappedBy = "address")`
+- The `unique = true` constraint on `@JoinColumn` is what turns a `@ManyToOne`-shaped FK into a true one-to-one — without it, PostgreSQL would happily let multiple users point at the same address row.
 
 **Key files:** `UserEntity.java`, `AddressEntity.java`
 
@@ -556,6 +675,23 @@ jpa_customer (id, name, email)  ←→  jpa_order (id, product, amount, customer
 departments  (dept_id, name)    ←→  employees  (emp_id, ..., dept_id FK)
 ```
 
+```mermaid
+erDiagram
+    DEPARTMENTS {
+        int dept_id PK
+        varchar dept_name
+    }
+    EMPLOYEES {
+        int emp_id PK
+        varchar first_name
+        varchar last_name
+        varchar email
+        numeric salary
+        int dept_id FK "owning side"
+    }
+    DEPARTMENTS ||--o{ EMPLOYEES : "dept_id → dept_id"
+```
+
 - `OrderEntity` / `EmployeeEntity` own the FK → **many side is always the owning side**
 - `CustomerEntity` / `DepartmentEntity` are the inverse sides (use `mappedBy`)
 
@@ -575,6 +711,28 @@ private CustomerEntity customer;
 ```
 jpa_student ←→ jpa_student_course (student_id, course_id) ←→ jpa_course
 ```
+
+```mermaid
+erDiagram
+    JPA_STUDENT {
+        bigint id PK
+        varchar name
+        varchar email
+    }
+    JPA_COURSE {
+        bigint id PK
+        varchar title
+        varchar description
+    }
+    JPA_STUDENT_COURSE {
+        bigint student_id FK
+        bigint course_id FK
+    }
+    JPA_STUDENT ||--o{ JPA_STUDENT_COURSE : "id -> student_id"
+    JPA_COURSE  ||--o{ JPA_STUDENT_COURSE : "id -> course_id"
+```
+
+Unlike `@OneToOne`/`@OneToMany`, neither `jpa_student` nor `jpa_course` holds a foreign key — the relationship itself becomes a third table (`jpa_student_course`) whose composite primary key *is* the pair of foreign keys. Neither entity class maps directly to a row in that join table; Hibernate manages inserts/deletes into it transparently whenever you add or remove elements from the `courses`/`students` collections.
 
 - One side defines `@JoinTable` (owning) — `StudentEntity`
 - Other side uses `mappedBy` (inverse) — `CourseEntity`
@@ -623,6 +781,8 @@ Hibernate-specific extras: `REPLICATE`, `SAVE_UPDATE`, `LOCK`.
 | `LAZY` | Associated entities loaded as proxies; DB hit only on first access | `@OneToMany`, `@ManyToMany` |
 | `EAGER` | Associated entities loaded immediately with the parent | `@ManyToOne`, `@OneToOne` |
 
+`LAZY` associations are backed by a runtime-generated proxy subclass (or a bytecode-instrumented field) — accessing `department.getEmployees()` for the first time is what triggers Hibernate to open a `Session` round-trip and populate the real collection. This is powerful (you only pay for what you use) and dangerous (the query happens implicitly, often deep inside a loop, far from where the collection was fetched) — which is exactly the shape of the N+1 problem below.
+
 #### The N+1 Problem
 
 ```sql
@@ -637,6 +797,28 @@ SELECT * FROM employees WHERE dept_id = 4;
 -- Total: 1 + 4 = 5 queries instead of 1
 ```
 
+```mermaid
+sequenceDiagram
+    participant App as Application code
+    participant Hib as Hibernate
+    participant DB as PostgreSQL
+
+    App->>Hib: departmentRepository.findAll()
+    Hib->>DB: SELECT * FROM departments
+    DB-->>Hib: 4 rows (lazy proxies for employees)
+    Hib-->>App: List<DepartmentEntity> (employees NOT loaded yet)
+
+    loop for each department (the "N" in N+1)
+        App->>Hib: dept.getEmployees().size()
+        Hib->>DB: SELECT * FROM employees WHERE dept_id = ?
+        DB-->>Hib: matching rows
+        Hib-->>App: initialized collection
+    end
+    Note over App,DB: 1 (departments) + 4 (one per department) = 5 round-trips
+```
+
+This repo demonstrates four different fixes for the same underlying problem, each with different trade-offs — see the comparison table in §5.29 for how `JOIN FETCH`, `@EntityGraph`, `@BatchSize`, and `@Fetch(SUBSELECT)` stack up against each other.
+
 #### Solution: JOIN FETCH
 
 ```java
@@ -645,6 +827,8 @@ SELECT * FROM employees WHERE dept_id = 4;
 List<DepartmentEntity> findAllWithEmployees();
 // Result: 1 SQL query with a JOIN — no N+1
 ```
+
+`JOIN FETCH` tells Hibernate to populate the association eagerly *for this query only*, using a single SQL `LEFT OUTER JOIN`, without changing the association's declared `FetchType`. The trade-off: the department row is duplicated once per employee in the result set (a classic join fan-out), so this is best for modestly sized collections — for large ones, `@BatchSize` or `@Fetch(SUBSELECT)` (§5.29) avoid the duplication.
 
 ---
 
@@ -700,7 +884,17 @@ repo.delete(customer);
 
 ### 5.9 Inheritance Strategies
 
-Four strategies, each with different trade-offs.
+Object-oriented inheritance and relational tables don't map onto each other naturally — a class hierarchy is a tree of "is-a" relationships, while a relational schema is a flat set of tables connected by foreign keys. JPA offers four different ways to bridge that gap, and this repo implements all four side by side specifically so their generated schemas and query behaviour can be compared directly rather than taken on faith.
+
+```mermaid
+flowchart TD
+    Q1{"Do subclasses need\nto be queried polymorphically?\n(e.g. 'all animals')"}
+    Q1 -- "No — never" --> MS["@MappedSuperclass\n(DeviceBase → Computer/MobilePhone)"]
+    Q1 -- "Yes" --> Q2{"How many columns are\nunique per subclass?"}
+    Q2 -- "Few, and NULLs are acceptable" --> ST["SINGLE_TABLE\n(Vehicle → Car/Motorcycle)"]
+    Q2 -- "Many, want NOT NULL\nand full normalization" --> JN["JOINED\n(Payment → CreditCard/BankTransfer)"]
+    Q2 -- "Rarely the right answer" --> TPC["TABLE_PER_CLASS\n(Animal → Dog/Cat)"]
+```
 
 #### Strategy 1: @MappedSuperclass
 
@@ -710,6 +904,24 @@ No table for the parent. Each concrete subclass gets its own independent table w
 computer    (id, brand, name, os)
 mobile_phone(id, brand, name, color)
 ```
+
+```mermaid
+erDiagram
+    COMPUTER {
+        bigint id PK
+        varchar brand
+        varchar name
+        varchar os
+    }
+    MOBILE_PHONE {
+        bigint id PK
+        varchar brand
+        varchar name
+        varchar color
+    }
+```
+
+Notice `computer` and `mobile_phone` share no table, no FK, and no common column beyond duplicated definitions — `DeviceBase` never becomes a real table; its fields (`id`, `brand`, `name`) are just copy-pasted into each subclass's own `CREATE TABLE` by Hibernate at schema-generation time (or, here, hand-written identically in the migration).
 
 - **Cannot** query polymorphically (`SELECT * FROM DeviceBase` is impossible)
 - **Cannot** create FK relationships pointing at `DeviceBase`
@@ -723,6 +935,18 @@ One table for the entire hierarchy. A discriminator column identifies the subcla
 
 ```
 vehicle (id, dtype, brand, model, num_doors, engine_capacity_cc)
+```
+
+```mermaid
+erDiagram
+    VEHICLE {
+        bigint id PK
+        varchar dtype "discriminator: Car | Motorcycle"
+        varchar brand
+        varchar model
+        int num_doors "NULL for Motorcycle rows"
+        int engine_capacity_cc "NULL for Car rows"
+    }
 ```
 
 - `num_doors` is always NULL for motorcycles; `engine_capacity_cc` always NULL for cars
@@ -751,6 +975,30 @@ credit_card_payment(id FK→payment, card_number, card_holder)
 bank_transfer_payment(id FK→payment, bank_name, account_number)
 ```
 
+```mermaid
+erDiagram
+    PAYMENT {
+        bigint id PK
+        numeric amount
+        date payment_date
+        varchar dtype
+    }
+    CREDIT_CARD_PAYMENT {
+        bigint id PK, FK "FK -> payment.id"
+        varchar card_number
+        varchar card_holder
+    }
+    BANK_TRANSFER_PAYMENT {
+        bigint id PK, FK "FK -> payment.id"
+        varchar bank_name
+        varchar account_number
+    }
+    PAYMENT ||--o| CREDIT_CARD_PAYMENT : "id"
+    PAYMENT ||--o| BANK_TRANSFER_PAYMENT : "id"
+```
+
+Loading a `CreditCardPaymentEntity` requires Hibernate to `JOIN payment ON payment.id = credit_card_payment.id` — this is the cost of full normalization: every subclass-specific column can be `NOT NULL`, but every read pays a join.
+
 - All columns can have NOT NULL constraints
 - Polymorphic queries require JOINs (slower than SINGLE_TABLE)
 - Best for normalized schemas where subclasses have many unique fields
@@ -774,6 +1022,22 @@ dog (id, name, breed)       -- id comes from shared sequence `animal_seq`
 cat (id, name, color)       -- id comes from shared sequence `animal_seq`
 ```
 
+```mermaid
+erDiagram
+    DOG {
+        bigint id PK "from shared sequence animal_seq"
+        varchar name
+        varchar breed
+    }
+    CAT {
+        bigint id PK "from shared sequence animal_seq"
+        varchar name
+        varchar color
+    }
+```
+
+A polymorphic query such as `SELECT a FROM AnimalEntity a` cannot use a simple `JOIN` (there is no shared table) nor a discriminator column (there is no shared table for one to live on) — Hibernate is forced to generate a `SELECT ... FROM dog UNION ALL SELECT ... FROM cat`, re-executing and merging both tables' full contents on every polymorphic query.
+
 - Polymorphic queries (`SELECT a FROM AnimalEntity a`) use `UNION ALL` — slow on large tables
 - IDs must be globally unique across all subclass tables → use a shared sequence
 - Rarely the best choice; prefer JOINED or SINGLE_TABLE
@@ -788,6 +1052,8 @@ public abstract class AnimalEntity {
     private Long id;
 }
 ```
+
+**Why the shared `animal_seq` sequence matters:** if `dog` and `cat` each used their own auto-increment/identity column, both tables could independently produce a row with `id = 1`. Since a polymorphic `UNION ALL` query merges rows from both tables into one JPA result set, two entities with the same id would be indistinguishable to client code (and to Hibernate's first-level cache, which is keyed by entity type + id — a collision here is scoped to the concrete subclass, but a shared sequence keeps ids globally unique as a matter of hygiene across the whole hierarchy).
 
 #### Inheritance Strategy Comparison
 
@@ -1259,27 +1525,53 @@ List<EmployeeRow> result = namedJdbc.query(sql, params, (rs, rowNum) ->
 
 ### 5.20 Connection Pool (HikariCP)
 
-Spring Boot uses **HikariCP** by default — "fast, simple, reliable, lightweight."
+Spring Boot uses **HikariCP** by default — "fast, simple, reliable, lightweight." A connection pool exists because opening a fresh TCP connection to PostgreSQL is expensive relative to running a query on it: PostgreSQL forks a new backend process per connection, negotiates SSL/auth, and initializes session state — work that would otherwise be repeated on every single request if the driver opened and closed a raw socket each time. A pool amortizes that cost by keeping a set of already-authenticated connections open and handing them out and back like a lending library.
 
-Configuration in `application.yml`:
+Configuration in `application.yml` (this repo's actual settings, not illustrative values):
 
 ```yaml
 spring:
   datasource:
     hikari:
       pool-name: learning-db-pool
-      maximum-pool-size: 10     # max concurrent connections
-      minimum-idle: 2           # keep at least 2 alive
-      idle-timeout: 30000       # ms before idle connection is removed
-      max-lifetime: 1800000     # ms max lifetime of a connection (30 min)
-      connection-timeout: 20000 # ms to wait for a connection before error
+      maximum-pool-size: 10           # max concurrent DB connections
+      minimum-idle: 2                 # keep at least 2 alive at all times
+      idle-timeout: 30000             # remove idle connection after 30s
+      max-lifetime: 1800000           # max connection lifetime 30min (rotate before DB closes it)
+      connection-timeout: 20000       # throw if no connection available after 20s
+      leak-detection-threshold: 5000  # warn if a connection is held for > 5s (helps find leaks)
+      auto-commit: true               # Spring manages transactions — default is fine
 ```
 
 **How connection pooling works:**
-1. App calls `getConnection()` → pool returns an existing idle connection
-2. No idle connection? → pool creates a new one (up to `maximum-pool-size`)
-3. App calls `connection.close()` → connection is returned to the pool (socket stays open)
-4. Without a pool: every `close()` destroys the socket; next request opens a new TCP connection (expensive)
+
+```mermaid
+sequenceDiagram
+    participant Req as Request thread
+    participant Pool as HikariCP Pool (max=10, min-idle=2)
+    participant PG as PostgreSQL backend process
+
+    Req->>Pool: getConnection()
+    alt idle connection available
+        Pool-->>Req: hand out existing connection (no new socket)
+    else pool below maximum-pool-size
+        Pool->>PG: open new TCP connection + authenticate
+        PG-->>Pool: connection established
+        Pool-->>Req: hand out new connection
+    else pool exhausted (10 already checked out)
+        Pool--xReq: block up to connection-timeout (20s), then throw
+    end
+    Req->>Req: run query / transaction
+    Req->>Pool: connection.close()
+    Note over Pool: NOT a real close — connection is\nreturned to the pool, socket stays open
+    Pool->>Pool: idle-timeout (30s) evicts unused connections\nabove minimum-idle; max-lifetime (30min)\nforcibly rotates even busy ones
+```
+
+**`leak-detection-threshold: 5000`** — if a connection is checked out of the pool for longer than 5 seconds without being returned, HikariCP logs a warning with the stack trace of where it was borrowed. This exists because a forgotten `connection.close()` (or an exception path that skips it) permanently removes that connection from the pool — with a `maximum-pool-size` of 10, only 10 such leaks are needed to starve the entire application of database access.
+
+**`ddl-auto: none` + `open-in-view: false`** (also in `application.yml`, and directly relevant to the topics above):
+- `spring.jpa.hibernate.ddl-auto: none` — Hibernate is forbidden from creating or altering tables itself; Flyway (§3) is the single source of schema truth. Letting both Hibernate auto-DDL and Flyway manage the schema is a common source of drift and is deliberately avoided here.
+- `spring.jpa.open-in-view: false` — by default Spring Boot keeps the Hibernate `Session` (and therefore a checked-out DB connection) open for the entire HTTP request, including view rendering, so that lazy associations can still be accessed after the `@Transactional` service method returns. This is the "Open Session In View" pattern, and it is disabled here deliberately: it hides N+1 queries (§5.6) inside the view layer, holds a pooled connection for the whole request instead of just the transactional portion, and turns `LazyInitializationException` (which should surface immediately, inside the service layer) into a much later, harder-to-diagnose failure. With it off, any lazy access outside the transaction fails fast, which is exactly why this repo uses `JOIN FETCH`, `@EntityGraph`, and DTO projections (§5.10, §5.21) rather than relying on lazy loading from a controller.
 
 **Pool size rule of thumb:**
 ```
@@ -1344,7 +1636,23 @@ WHERE e.first_name LIKE ?
 
 ### 5.22 @Lock — Pessimistic & Optimistic Locking
 
-Concurrent transactions that both read then write the same row can produce lost updates. Spring Data JPA exposes three locking modes via `@Lock`.
+Concurrent transactions that both read then write the same row can produce **lost updates**: transaction A reads a row, transaction B reads the same row, A writes back its (now stale) change, B writes back its own stale change — silently overwriting A's update as if it never happened. Neither transaction saw an error; the data is simply wrong. Spring Data JPA exposes three locking modes via `@Lock` that each defend against this differently.
+
+```mermaid
+sequenceDiagram
+    participant TxA as Transaction A
+    participant TxB as Transaction B
+    participant DB as employees row (salary)
+
+    Note over TxA,TxB: Without any locking — the lost update problem
+    TxA->>DB: SELECT salary (reads 50000)
+    TxB->>DB: SELECT salary (reads 50000)
+    TxA->>DB: UPDATE salary = 50000 + 1000 = 51000
+    TxA->>DB: COMMIT
+    TxB->>DB: UPDATE salary = 50000 + 2000 = 52000
+    TxB->>DB: COMMIT
+    Note over DB: Final salary = 52000 —\nTx A's +1000 raise is silently lost
+```
 
 #### Pessimistic Write — `SELECT FOR UPDATE`
 
@@ -1360,6 +1668,24 @@ SELECT * FROM employees WHERE emp_id = ? FOR UPDATE
 ```
 
 The row is locked the moment it is read. Any other transaction attempting to read-for-update (or write) that row will **block** until this transaction commits or rolls back. Use this when two concurrent transactions are likely to update the same row — e.g. account balance transfers.
+
+```mermaid
+sequenceDiagram
+    participant TxA as Transaction A
+    participant DB as PostgreSQL (row lock)
+    participant TxB as Transaction B
+
+    TxA->>DB: SELECT ... FOR UPDATE (empId=5)
+    DB-->>TxA: row locked, salary=50000
+    TxB->>DB: SELECT ... FOR UPDATE (empId=5)
+    Note over TxB,DB: TxB blocks — row is already locked by TxA
+    TxA->>DB: UPDATE salary = 51000
+    TxA->>DB: COMMIT (lock released)
+    DB-->>TxB: lock acquired, salary=51000 (TxA's write is visible)
+    TxB->>DB: UPDATE salary = 51000 + 2000 = 53000
+    TxB->>DB: COMMIT
+    Note over DB: Final salary = 53000 — both updates applied correctly, in order
+```
 
 #### Pessimistic Read — `SELECT FOR SHARE`
 
@@ -1390,6 +1716,24 @@ No SQL-level lock is acquired at read time. Instead, Hibernate checks at commit 
 @Version
 private Long version;
 ```
+
+```mermaid
+sequenceDiagram
+    participant TxA as Transaction A
+    participant DB as product row (version)
+    participant TxB as Transaction B
+
+    TxA->>DB: SELECT * (reads version=3)
+    TxB->>DB: SELECT * (reads version=3)
+    TxA->>DB: UPDATE ... SET version=4 WHERE id=? AND version=3
+    Note over DB: matches 1 row — version bumped to 4
+    TxA->>DB: COMMIT
+    TxB->>DB: UPDATE ... SET version=4 WHERE id=? AND version=3
+    Note over DB: matches 0 rows — version is already 4, not 3
+    DB-->>TxB: OptimisticLockException thrown, transaction rolls back
+```
+
+Hibernate implements this by silently appending `AND version = ?` to every `UPDATE`/`DELETE` it issues for a `@Version`-annotated entity, and checking the affected-row count: if it's zero, someone else committed a change since you read the row, and Hibernate raises `OptimisticLockException` instead of silently applying a stale write.
 
 **Comparison:**
 
@@ -1480,6 +1824,28 @@ public void log(String message) {
 }
 ```
 
+The whole point of this pattern is that an audit trail must be trustworthy *especially* when the operation it's auditing failed. If `log()` simply joined the caller's transaction (the `REQUIRED` default), a rollback in `giveRaiseWithAudit` would erase the audit entry along with the salary update — the one situation where you most want a durable record of what was attempted.
+
+```mermaid
+sequenceDiagram
+    participant Caller as giveRaiseWithAudit()<br/>(outer @Transactional, REQUIRED)
+    participant TxOuter as Outer DB transaction
+    participant AuditSvc as AuditLogService.log()<br/>(REQUIRES_NEW)
+    participant TxInner as Inner DB transaction (suspended outer)
+
+    Caller->>TxOuter: BEGIN (outer tx)
+    Caller->>TxOuter: UPDATE employees SET salary = salary * multiplier
+    Caller->>AuditSvc: log("Salary updated...")
+    AuditSvc->>TxOuter: suspend outer transaction
+    AuditSvc->>TxInner: BEGIN (new, independent tx)
+    AuditSvc->>TxInner: INSERT audit entry
+    AuditSvc->>TxInner: COMMIT  ← durable regardless of what happens next
+    AuditSvc->>TxOuter: resume outer transaction
+    Caller->>Caller: throw RuntimeException("Simulated failure")
+    Caller->>TxOuter: ROLLBACK (salary update undone)
+    Note over TxInner,TxOuter: Result: salary change is undone,<br/>but the audit log entry survives — it was committed independently
+```
+
 #### Isolation — what concurrent transactions can see
 
 | Isolation Level | Dirty Read | Non-Repeatable Read | Phantom Read |
@@ -1501,6 +1867,41 @@ public void serializableExample() { ... }
 - **Dirty read** — you read a row another transaction has modified but not yet committed. If that transaction rolls back, your data never existed.
 - **Non-repeatable read** — you read the same row twice in one transaction and get different values (another transaction committed a change between your two reads).
 - **Phantom read** — you run the same range query twice and get different rows (another transaction inserted/deleted rows matching your predicate between reads).
+
+```mermaid
+sequenceDiagram
+    participant A as Tx A (READ_UNCOMMITTED)
+    participant B as Tx B
+    Note over A,B: Dirty read — only possible under READ_UNCOMMITTED
+    B->>B: UPDATE employees SET salary=99999 (not yet committed)
+    A->>A: SELECT salary → reads 99999
+    B->>B: ROLLBACK
+    Note over A: Tx A acted on a salary value<br/>that never actually existed in the database
+```
+
+```mermaid
+sequenceDiagram
+    participant A as Tx A (READ_COMMITTED)
+    participant B as Tx B
+    Note over A,B: Non-repeatable read — possible under READ_COMMITTED
+    A->>A: SELECT salary → reads 50000
+    B->>B: UPDATE salary=60000; COMMIT
+    A->>A: SELECT salary again → reads 60000
+    Note over A: Same row, same transaction,<br/>two different values
+```
+
+```mermaid
+sequenceDiagram
+    participant A as Tx A (REPEATABLE_READ)
+    participant B as Tx B
+    Note over A,B: Phantom read — possible under REPEATABLE_READ
+    A->>A: SELECT * FROM employees WHERE salary > 80000 → 3 rows
+    B->>B: INSERT new employee (salary=90000); COMMIT
+    A->>A: SELECT * FROM employees WHERE salary > 80000 again → 4 rows
+    Note over A: Same predicate, same transaction,<br/>a new "phantom" row appeared
+```
+
+PostgreSQL is worth calling out specifically here: its `REPEATABLE_READ` is implemented via snapshot isolation (MVCC), which in practice also prevents phantom reads for the simple case above — PostgreSQL's `REPEATABLE_READ` is actually stricter than the SQL standard requires (it's closer to "snapshot isolation"). The standard's anomaly table above describes the *worst case a standard-conforming database is allowed to exhibit* at each level, not necessarily what every specific engine does — the four `Isolation` values are what Spring/JPA expose portably across databases, but always check your specific database's actual guarantees when it matters.
 
 #### rollbackFor / noRollbackFor
 
@@ -1561,6 +1962,22 @@ SELECT * FROM employees WHERE salary < 75000 ORDER BY salary DESC LIMIT 10
 ```
 
 The `WHERE salary < ?` clause uses the index directly — no scanning, no skipping.
+
+```mermaid
+flowchart TB
+    subgraph Offset["OFFSET pagination — cost grows with depth"]
+        direction LR
+        O1["Page 1\nOFFSET 0"] --> O2["Page 2\nOFFSET 10\n(scan+discard 10)"]
+        O2 --> O3["Page 3\nOFFSET 20\n(scan+discard 20)"]
+        O3 --> O100["Page 100\nOFFSET 1000\n(scan+discard 1000)"]
+    end
+    subgraph Keyset["Keyset (Window/ScrollPosition) — constant cost"]
+        direction LR
+        K1["Page 1\nWHERE none\n(index seek)"] --> K2["Page 2\nWHERE salary < 82000\n(index seek)"]
+        K2 --> K3["Page 3\nWHERE salary < 75000\n(index seek)"]
+        K3 --> K100["Page 100\nWHERE salary < X\n(index seek — same cost as page 1)"]
+    end
+```
 
 #### Spring Data API
 
@@ -2024,61 +2441,183 @@ spring.jpa.properties.hibernate:
 
 ## 6. Database Schema Overview
 
+The tables below fall into two families: the **interview-question schema** (`departments`, `employees`, `emp_test`, `scores`, `deliveries` — flat, denormalized, built purely to host the SQL problems in §4) and the **JPA-concept schema** (everything from `V6` onward — deliberately shaped to exercise a specific mapping feature per table group). Grouped by Flyway migration and by the JPA concept each group demonstrates:
+
+#### Interview-question schema (V1–V5)
+
+```mermaid
+erDiagram
+    DEPARTMENTS {
+        int dept_id PK
+        varchar dept_name
+    }
+    EMPLOYEES {
+        int emp_id PK
+        varchar first_name
+        varchar last_name
+        varchar email
+        numeric salary
+        varchar col_a "swap demo - Q7"
+        varchar col_b "swap demo - Q7"
+        int dept_id FK
+    }
+    EMP_TEST {
+        varchar emp_name
+        numeric salary "indexed DESC - Q5"
+    }
+    SCORES {
+        int id PK
+        varchar name
+        varchar subject
+        int score
+    }
+    DELIVERIES {
+        int order_id PK
+        varchar restaurant
+        numeric amount
+        int rating
+    }
+    DEPARTMENTS ||--o{ EMPLOYEES : "dept_id"
 ```
-departments          employees
-──────────────       ────────────────────────────────────────
-dept_id (PK)  ◄──── dept_id (FK)
-dept_name            emp_id (PK)
-                     first_name, last_name, email
-                     salary, col_a, col_b
 
-emp_test             scores                   deliveries
-──────────           ──────────────────       ──────────────────
-emp_name             id (PK)                  order_id (PK)
-salary               name, subject, score     restaurant, amount, rating
+`emp_test`, `scores`, and `deliveries` are intentionally standalone (no FKs) — each exists purely to seed one interview problem (ranking ties for Q3–Q4, pivoting for Q6, `HAVING` with multiple aggregate conditions for Q10) with hand-crafted data.
 
+#### JPA relationship schema (V6)
 
-jpa_address          jpa_user
-───────────          ──────────────────────
-id (PK)       ◄──── address_id (FK, UNIQUE)
-street, city, zip    id (PK), name, email
+```mermaid
+erDiagram
+    JPA_ADDRESS {
+        bigint id PK
+        varchar street
+        varchar city
+        varchar zip
+    }
+    JPA_USER {
+        bigint id PK
+        varchar name
+        varchar email
+        bigint address_id FK "UNIQUE"
+    }
+    JPA_CUSTOMER {
+        bigint id PK
+        varchar name
+        varchar email
+    }
+    JPA_ORDER {
+        bigint id PK
+        varchar product
+        numeric amount
+        bigint customer_id FK
+    }
+    JPA_STUDENT {
+        bigint id PK
+        varchar name
+        varchar email
+    }
+    JPA_COURSE {
+        bigint id PK
+        varchar title
+        varchar description
+    }
+    JPA_STUDENT_COURSE {
+        bigint student_id FK
+        bigint course_id FK
+    }
 
-
-jpa_customer         jpa_order                jpa_order_item
-────────────         ──────────────────       ───────────────────────────
-id (PK)       ◄──── customer_id (FK)         order_id + product_code (PK)
-name, email          id (PK)                  quantity, price
-                     product, amount
-
-
-jpa_student ────────────────────── jpa_course
-id (PK)      jpa_student_course    id (PK)
-name, email  student_id, course_id title, description
-
-
-vehicle (SINGLE_TABLE — dtype discriminator)
-id | dtype        | brand  | model  | num_doors | engine_capacity_cc
-1  | Car          | Toyota | Camry  | 4         | NULL
-3  | Motorcycle   | Yamaha | R1     | NULL      | 1000
-
-
-payment (JOINED base)                credit_card_payment / bank_transfer_payment
-id | amount | payment_date | dtype   id (FK→payment) | card_number | card_holder
-                                     id (FK→payment) | bank_name   | account_number
-
-
-computer / mobile_phone              dog / cat
-(MappedSuperclass — no parent table) (TABLE_PER_CLASS — shared animal_seq)
-id | brand | name | os              id | name | breed/color
-
-
-product (soft delete + audit + @Convert priority)
-id | name | price | category | priority | deleted | created_by | created_date | last_modified_date | version
-
-
-stock_item (@SQLRestriction — deleted rows always hidden)
-id | name | stock | deleted
+    JPA_USER     ||--||     JPA_ADDRESS       : "address_id (1:1)"
+    JPA_CUSTOMER ||--o{     JPA_ORDER          : "customer_id (1:N)"
+    JPA_STUDENT  ||--o{     JPA_STUDENT_COURSE : "student_id (N:M)"
+    JPA_COURSE   ||--o{     JPA_STUDENT_COURSE : "course_id (N:M)"
 ```
+
+#### JPA inheritance schema (V7) — all four strategies side by side
+
+```mermaid
+erDiagram
+    VEHICLE {
+        bigint id PK
+        varchar dtype "SINGLE_TABLE discriminator"
+        varchar brand
+        varchar model
+        int num_doors "NULL for Motorcycle"
+        int engine_capacity_cc "NULL for Car"
+    }
+    PAYMENT {
+        bigint id PK
+        numeric amount
+        date payment_date
+        varchar dtype "JOINED base"
+    }
+    CREDIT_CARD_PAYMENT {
+        bigint id PK "FK to payment.id"
+        varchar card_number
+        varchar card_holder
+    }
+    BANK_TRANSFER_PAYMENT {
+        bigint id PK "FK to payment.id"
+        varchar bank_name
+        varchar account_number
+    }
+    COMPUTER {
+        bigint id PK
+        varchar brand
+        varchar name
+        varchar os
+    }
+    MOBILE_PHONE {
+        bigint id PK
+        varchar brand
+        varchar name
+        varchar color
+    }
+    DOG {
+        bigint id PK "shared animal_seq - TABLE_PER_CLASS"
+        varchar name
+        varchar breed
+    }
+    CAT {
+        bigint id PK "shared animal_seq - TABLE_PER_CLASS"
+        varchar name
+        varchar color
+    }
+
+    PAYMENT ||--o| CREDIT_CARD_PAYMENT : "id"
+    PAYMENT ||--o| BANK_TRANSFER_PAYMENT : "id"
+```
+
+`computer`/`mobile_phone` and `dog`/`cat` are deliberately disconnected in this diagram — that disconnection *is* the point (§5.9): `@MappedSuperclass` and `TABLE_PER_CLASS` both produce independent tables with no shared parent row to draw a relationship to.
+
+#### Other JPA-concept tables (V8–V10)
+
+```mermaid
+erDiagram
+    JPA_ORDER_ITEM {
+        bigint order_id PK "composite key part 1"
+        varchar product_code PK "composite key part 2"
+        int quantity
+        numeric price
+    }
+    PRODUCT {
+        bigint id PK
+        varchar name
+        numeric price
+        varchar category
+        varchar priority "low/normal/high - via AttributeConverter"
+        boolean deleted "true = soft-deleted"
+        varchar created_by
+        timestamp created_date
+        timestamp last_modified_date
+        bigint version "optimistic lock"
+    }
+    STOCK_ITEM {
+        bigint id PK
+        varchar name
+        int stock
+        boolean deleted "always hidden via @SQLRestriction"
+    }
+```
+
+`jpa_order_item`'s primary key is the *pair* `(order_id, product_code)` — there is no surrogate `id` column, which is exactly what forces the `@EmbeddedId` mapping in §5.13. `product` and `stock_item` look almost identical (both soft-deletable) but demonstrate the two different soft-delete mechanisms compared in §5.26.
 
 ---
 
