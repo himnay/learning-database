@@ -1,5 +1,7 @@
 # Learning Database — Spring Boot + PostgreSQL
 
+<img src="image/spring-logo.png" alt="Spring" width="70"/> <img src="image/postgresql-logo.png" alt="PostgreSQL" width="70"/>
+
 A self-contained learning project covering **SQL interview questions** and every major **Spring Data JPA concept**.  
 All tables are created and seeded automatically by Flyway on startup.
 
