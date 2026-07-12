@@ -53,10 +53,10 @@ At startup, Flyway inspects `db/migration`, compares each script's checksum agai
 
 ## Table of Contents
 
-1. [Quick Start](#1-quick-start)
-2. [Project Structure](#2-project-structure)
-3. [Flyway Migrations](#3-flyway-migrations)
-4. [SQL Interview Query Problems](#4-sql-interview-query-problems)
+1. 🚀 [Quick Start](#1-quick-start)
+2. 🏗️ [Project Structure](#2-project-structure)
+3. 🗄️ [Flyway Migrations](#3-flyway-migrations)
+4. 🗄️ [SQL Interview Query Problems](#4-sql-interview-query-problems)
    - Q1 Employee & Department — JOIN, GROUP BY, MAX
    - Q2 HAVING vs WHERE
    - Q3 ROW_NUMBER vs RANK vs DENSE_RANK
@@ -67,7 +67,7 @@ At startup, Flyway inspects `db/migration`, compares each script's checksum agai
    - Q8 NTILE()
    - Q9 LAG() and LEAD()
    - Q10 Kth Rating in a Restaurant
-5. [Spring Data JPA Concepts](#5-spring-data-jpa-concepts)
+5. 🗄️ [Spring Data JPA Concepts](#5-spring-data-jpa-concepts)
    - 5.1 Spring Data Overview
    - 5.2 JPA vs Hibernate
    - 5.3 CrudRepository vs JpaRepository
@@ -99,8 +99,8 @@ At startup, Flyway inspects `db/migration`, compares each script's checksum agai
    - 5.29 @BatchSize and @Fetch(SUBSELECT) — N+1 Alternatives
    - 5.30 Jackson Serialization — @JsonManagedReference / @JsonBackReference / @JsonIgnoreProperties
    - 5.31 JdbcTemplate.batchUpdate()
-6. [Database Schema Overview](#6-database-schema-overview)
-7. [Connect to the Database](#7-connect-to-the-database)
+6. 🗄️ [Database Schema Overview](#6-database-schema-overview)
+7. 🗄️ [Connect to the Database](#7-connect-to-the-database)
 
 ---
 
