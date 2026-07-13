@@ -108,6 +108,7 @@ At startup, Flyway inspects `db/migration`, compares each script's checksum agai
 ## 1. 🚀 Quick Start
 
 ### Prerequisites
+
 <ul>
 
 - Docker & Docker Compose
@@ -605,6 +606,7 @@ Sushi Star  |       4       |     4       ← 4 ratings, all ≥ 4 ✅
 Spring Data is an umbrella project providing a consistent programming model across different data stores (JPA, MongoDB, Redis, Cassandra, etc.).
 
 **Benefits:**
+
 <ul>
 
 - Eliminates boilerplate DAO/repository code
@@ -1221,6 +1223,7 @@ public interface ProductRepository
 ```
 
 **When NOT to use Specification:**
+
 <ul>
 
 - Static queries with fixed parameters → use method naming or `@Query`
@@ -1235,6 +1238,7 @@ public interface ProductRepository
 Simpler than Specification when your entity already has the fields you want to filter on. You fill in a partially-populated entity (Probe) and Spring builds the WHERE clause from non-null fields.
 
 **Three parts:**
+
 <ul>
 
 - **Probe:** a partially-filled entity instance
@@ -1625,6 +1629,7 @@ sequenceDiagram
 **`leak-detection-threshold: 5000`** — if a connection is checked out of the pool for longer than 5 seconds without being returned, HikariCP logs a warning with the stack trace of where it was borrowed. This exists because a forgotten `connection.close()` (or an exception path that skips it) permanently removes that connection from the pool — with a `maximum-pool-size` of 10, only 10 such leaks are needed to starve the entire application of database access.
 
 **`ddl-auto: none` + `open-in-view: false`** (also in `application.yml`, and directly relevant to the topics above):
+
 <ul>
 
 - `spring.jpa.hibernate.ddl-auto: none` — Hibernate is forbidden from creating or altering tables itself; Flyway (§3) is the single source of schema truth. Letting both Hibernate auto-DDL and Flyway manage the schema is a common source of drift and is deliberately avoided here.
@@ -1639,6 +1644,7 @@ pool_size = (number_of_cores × 2) + number_of_disks
 For a 4-core machine with 1 disk: start with `pool_size = 9`, tune from there.
 
 **Other popular connection pools:**
+
 <ul>
 
 - **C3P0** — older, not Spring Boot auto-configured
@@ -1817,6 +1823,7 @@ Hibernate implements this by silently appending `AND version = ?` to every `UPDA
 `@Modifying` marks a non-SELECT `@Query` (UPDATE, DELETE, INSERT via native SQL). Without it, Spring Data throws an exception because it expects a SELECT.
 
 **Why not just `save()` in a loop?**
+
 <ul>
 
 - `findAll()` + modify + `saveAll()` loads every entity into the first-level cache, runs a dirty check per entity, and issues one UPDATE per entity.
@@ -1849,6 +1856,7 @@ int purgeDeletedByCategory(@Param("category") String category);
 **`@Transactional` is required** — Spring Data repositories are not transactional by default for methods annotated with `@Query` that perform writes.
 
 **JPQL vs Native SQL for `@Modifying`:**
+
 <ul>
 
 - JPQL (`EmployeeEntity e SET e.salary`) — entity-level, respects type conversions and field mappings.
@@ -1935,6 +1943,7 @@ public void serializableExample() { ... }
 ```
 
 **Anomaly definitions:**
+
 <ul>
 
 - **Dirty read** — you read a row another transaction has modified but not yet committed. If that transaction rolls back, your data never existed.
@@ -2003,6 +2012,7 @@ public List<EmployeeEntity> readOnlyExample() { ... }
 ```
 
 `readOnly = true` benefits:
+
 <ul>
 
 - Hibernate skips dirty checking (no tracking what changed → faster).
@@ -2260,6 +2270,7 @@ WHERE d.dept_id = ?
 ```
 
 **Key rules:**
+
 <ul>
 
 - The parentheses `(…)` are **required** — Hibernate inlines the expression literally.
@@ -2271,6 +2282,7 @@ WHERE d.dept_id = ?
 </ul>
 
 **Use cases:**
+
 <ul>
 
 - Computed aggregates (count of children, sum of line items)
@@ -2503,6 +2515,7 @@ public int[] batchUpdateFromBeans(List<EmployeeRow> rows) {
 `SqlParameterSourceUtils.createBatch(list)` inspects the bean's getters (or record accessors) and maps them to named parameters automatically — no manual `MapSqlParameterSource` building.
 
 **Return types:**
+
 <ul>
 
 - `jdbcTemplate.batchUpdate(sql, list, chunkSize, setter)` → `int[][]`
