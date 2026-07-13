@@ -104,7 +104,8 @@ At startup, Flyway inspects `db/migration`, compares each script's checksum agai
 
 ---
 
-## 1. Quick Start
+<a id="1-quick-start"></a>
+## 1. 🚀 Quick Start
 
 ### Prerequisites
 - Docker & Docker Compose
@@ -138,7 +139,8 @@ mvn spring-boot:run
 
 ---
 
-## 2. Project Structure
+<a id="2-project-structure"></a>
+## 2. 🏗️ Project Structure
 
 ```
 learning-database/
@@ -240,7 +242,8 @@ learning-database/
 
 ---
 
-## 3. Flyway Migrations
+<a id="3-flyway-migrations"></a>
+## 3. 🗄️ Flyway Migrations
 
 Flyway is a **schema-as-code / migration-based** tool: instead of a DBA hand-editing the schema (or an ORM's `ddl-auto=update` silently guessing at changes), every structural change to the database is captured as an immutable, version-numbered SQL script committed to source control alongside the application code. This matters for a few concrete reasons this repo actually exercises:
 
@@ -281,7 +284,8 @@ Each script only ever runs once per database (tracked by version number in `flyw
 
 ---
 
-## 4. SQL Interview Query Problems
+<a id="4-sql-interview-query-problems"></a>
+## 4. 🗄️ SQL Interview Query Problems
 
 Connect to the database and run queries from `interview-queries.sql`, or paste them directly below.
 
@@ -583,7 +587,8 @@ Sushi Star  |       4       |     4       ← 4 ratings, all ≥ 4 ✅
 
 ---
 
-## 5. Spring Data JPA Concepts
+<a id="5-spring-data-jpa-concepts"></a>
+## 5. 🗄️ Spring Data JPA Concepts
 
 ---
 
@@ -2441,7 +2446,8 @@ spring.jpa.properties.hibernate:
 **Files:** `JdbcDemoService.java` (lines 109–152)
 ---
 
-## 6. Database Schema Overview
+<a id="6-database-schema-overview"></a>
+## 6. 🗄️ Database Schema Overview
 
 The tables below fall into two families: the **interview-question schema** (`departments`, `employees`, `emp_test`, `scores`, `deliveries` — flat, denormalized, built purely to host the SQL problems in §4) and the **JPA-concept schema** (everything from `V6` onward — deliberately shaped to exercise a specific mapping feature per table group). Grouped by Flyway migration and by the JPA concept each group demonstrates:
 
@@ -2623,7 +2629,8 @@ erDiagram
 
 ---
 
-## 7. Connect to the Database
+<a id="7-connect-to-the-database"></a>
+## 7. 🗄️ Connect to the Database
 
 ```bash
 # psql CLI
