@@ -108,9 +108,13 @@ At startup, Flyway inspects `db/migration`, compares each script's checksum agai
 ## 1. 🚀 Quick Start
 
 ### Prerequisites
+<ul>
+
 - Docker & Docker Compose
 - Java 17+ (project uses Java 17 source level; tested with Java 26)
 - Maven 3.8+
+
+</ul>
 
 ### Steps
 
@@ -247,10 +251,14 @@ learning-database/
 
 Flyway is a **schema-as-code / migration-based** tool: instead of a DBA hand-editing the schema (or an ORM's `ddl-auto=update` silently guessing at changes), every structural change to the database is captured as an immutable, version-numbered SQL script committed to source control alongside the application code. This matters for a few concrete reasons this repo actually exercises:
 
+<ul>
+
 - **Reproducibility** — anyone who clones the repo and runs `docker compose up -d && mvn spring-boot:run` gets byte-for-byte the same schema and seed data, because the migrations are the single source of truth (see `V1`–`V10` below).
 - **Auditability** — Flyway records every applied migration, its checksum, and its execution time in a `flyway_schema_history` table. If a script is edited after being applied, the checksum mismatch causes the next startup to fail loudly rather than silently drift.
 - **Safe incremental evolution** — `V10__additional_columns.sql` demonstrates this directly: rather than rewriting `V8`'s `product` table definition, a brand-new migration *adds* a `priority` column and a new `stock_item` table. Production schemas are never edited retroactively; they only move forward.
 - **Ordering guarantees** — migrations are versioned (`V1`, `V2`, … `V10`) so dependent objects are always created after what they depend on. `V6` (relationship tables) must run before any entity referencing `jpa_customer`/`jpa_order` can be persisted; `V9` (stored procedures) references columns created back in `V2`.
+
+</ul>
 
 ```mermaid
 flowchart LR
@@ -597,9 +605,13 @@ Sushi Star  |       4       |     4       ← 4 ratings, all ≥ 4 ✅
 Spring Data is an umbrella project providing a consistent programming model across different data stores (JPA, MongoDB, Redis, Cassandra, etc.).
 
 **Benefits:**
+<ul>
+
 - Eliminates boilerplate DAO/repository code
 - Method-name-based query derivation (`findByFirstNameAndSalaryGreaterThan`)
 - Consistent pagination, sorting, and auditing APIs
+
+</ul>
 
 ---
 
@@ -658,9 +670,13 @@ erDiagram
     JPA_USER ||--|| JPA_ADDRESS : "address_id → id"
 ```
 
+<ul>
+
 - `UserEntity` owns the FK (`address_id`) → owning side → has `@JoinColumn`
 - `AddressEntity` is the inverse side → has `@OneToOne(mappedBy = "address")`
 - The `unique = true` constraint on `@JoinColumn` is what turns a `@ManyToOne`-shaped FK into a true one-to-one — without it, PostgreSQL would happily let multiple users point at the same address row.
+
+</ul>
 
 **Key files:** `UserEntity.java`, `AddressEntity.java`
 
@@ -699,8 +715,12 @@ erDiagram
     DEPARTMENTS ||--o{ EMPLOYEES : "dept_id → dept_id"
 ```
 
+<ul>
+
 - `OrderEntity` / `EmployeeEntity` own the FK → **many side is always the owning side**
 - `CustomerEntity` / `DepartmentEntity` are the inverse sides (use `mappedBy`)
+
+</ul>
 
 ```java
 // CustomerEntity (inverse — one side)
@@ -741,9 +761,13 @@ erDiagram
 
 Unlike `@OneToOne`/`@OneToMany`, neither `jpa_student` nor `jpa_course` holds a foreign key — the relationship itself becomes a third table (`jpa_student_course`) whose composite primary key *is* the pair of foreign keys. Neither entity class maps directly to a row in that join table; Hibernate manages inserts/deletes into it transparently whenever you add or remove elements from the `courses`/`students` collections.
 
+<ul>
+
 - One side defines `@JoinTable` (owning) — `StudentEntity`
 - Other side uses `mappedBy` (inverse) — `CourseEntity`
 - Avoid `CascadeType.REMOVE` on ManyToMany — removing a student would delete shared courses
+
+</ul>
 
 ```java
 // StudentEntity (owning)
@@ -930,9 +954,13 @@ erDiagram
 
 Notice `computer` and `mobile_phone` share no table, no FK, and no common column beyond duplicated definitions — `DeviceBase` never becomes a real table; its fields (`id`, `brand`, `name`) are just copy-pasted into each subclass's own `CREATE TABLE` by Hibernate at schema-generation time (or, here, hand-written identically in the migration).
 
+<ul>
+
 - **Cannot** query polymorphically (`SELECT * FROM DeviceBase` is impossible)
 - **Cannot** create FK relationships pointing at `DeviceBase`
 - Best for sharing common fields (id, audit fields) without needing polymorphism
+
+</ul>
 
 **File:** `DeviceBase.java` → `ComputerEntity.java`, `MobilePhoneEntity.java`
 
@@ -956,10 +984,14 @@ erDiagram
     }
 ```
 
+<ul>
+
 - `num_doors` is always NULL for motorcycles; `engine_capacity_cc` always NULL for cars
 - **Fastest queries** — no JOINs needed
 - **Cannot add NOT NULL** constraints on subclass-specific columns
 - Best when subclasses have few unique fields
+
+</ul>
 
 **File:** `VehicleEntity.java` → `CarEntity.java`, `MotorcycleEntity.java`
 
@@ -1006,9 +1038,13 @@ erDiagram
 
 Loading a `CreditCardPaymentEntity` requires Hibernate to `JOIN payment ON payment.id = credit_card_payment.id` — this is the cost of full normalization: every subclass-specific column can be `NOT NULL`, but every read pays a join.
 
+<ul>
+
 - All columns can have NOT NULL constraints
 - Polymorphic queries require JOINs (slower than SINGLE_TABLE)
 - Best for normalized schemas where subclasses have many unique fields
+
+</ul>
 
 **File:** `PaymentEntity.java` → `CreditCardPaymentEntity.java`, `BankTransferPaymentEntity.java`
 
@@ -1045,9 +1081,13 @@ erDiagram
 
 A polymorphic query such as `SELECT a FROM AnimalEntity a` cannot use a simple `JOIN` (there is no shared table) nor a discriminator column (there is no shared table for one to live on) — Hibernate is forced to generate a `SELECT ... FROM dog UNION ALL SELECT ... FROM cat`, re-executing and merging both tables' full contents on every polymorphic query.
 
+<ul>
+
 - Polymorphic queries (`SELECT a FROM AnimalEntity a`) use `UNION ALL` — slow on large tables
 - IDs must be globally unique across all subclass tables → use a shared sequence
 - Rarely the best choice; prefer JOINED or SINGLE_TABLE
+
+</ul>
 
 **File:** `AnimalEntity.java` → `DogEntity.java`, `CatEntity.java`
 
@@ -1181,8 +1221,12 @@ public interface ProductRepository
 ```
 
 **When NOT to use Specification:**
+<ul>
+
 - Static queries with fixed parameters → use method naming or `@Query`
 - Queries requiring DB-specific features (window functions, CTEs) → use native `@Query`
+
+</ul>
 
 ---
 
@@ -1191,9 +1235,13 @@ public interface ProductRepository
 Simpler than Specification when your entity already has the fields you want to filter on. You fill in a partially-populated entity (Probe) and Spring builds the WHERE clause from non-null fields.
 
 **Three parts:**
+<ul>
+
 - **Probe:** a partially-filled entity instance
 - **ExampleMatcher:** defines how fields are compared (case-insensitive, CONTAINS, ignore nulls, etc.)
 - **Example:** `Example.of(probe, matcher)` — the final query spec
+
+</ul>
 
 ```java
 // service/ProductService.java
@@ -1577,8 +1625,12 @@ sequenceDiagram
 **`leak-detection-threshold: 5000`** — if a connection is checked out of the pool for longer than 5 seconds without being returned, HikariCP logs a warning with the stack trace of where it was borrowed. This exists because a forgotten `connection.close()` (or an exception path that skips it) permanently removes that connection from the pool — with a `maximum-pool-size` of 10, only 10 such leaks are needed to starve the entire application of database access.
 
 **`ddl-auto: none` + `open-in-view: false`** (also in `application.yml`, and directly relevant to the topics above):
+<ul>
+
 - `spring.jpa.hibernate.ddl-auto: none` — Hibernate is forbidden from creating or altering tables itself; Flyway (§3) is the single source of schema truth. Letting both Hibernate auto-DDL and Flyway manage the schema is a common source of drift and is deliberately avoided here.
 - `spring.jpa.open-in-view: false` — by default Spring Boot keeps the Hibernate `Session` (and therefore a checked-out DB connection) open for the entire HTTP request, including view rendering, so that lazy associations can still be accessed after the `@Transactional` service method returns. This is the "Open Session In View" pattern, and it is disabled here deliberately: it hides N+1 queries (§5.6) inside the view layer, holds a pooled connection for the whole request instead of just the transactional portion, and turns `LazyInitializationException` (which should surface immediately, inside the service layer) into a much later, harder-to-diagnose failure. With it off, any lazy access outside the transaction fails fast, which is exactly why this repo uses `JOIN FETCH`, `@EntityGraph`, and DTO projections (§5.10, §5.21) rather than relying on lazy loading from a controller.
+
+</ul>
 
 **Pool size rule of thumb:**
 ```
@@ -1587,10 +1639,14 @@ pool_size = (number_of_cores × 2) + number_of_disks
 For a 4-core machine with 1 disk: start with `pool_size = 9`, tune from there.
 
 **Other popular connection pools:**
+<ul>
+
 - **C3P0** — older, not Spring Boot auto-configured
 - **Tomcat JDBC** — `spring.datasource.type=org.apache.tomcat.jdbc.pool.DataSource`
 - **Apache DBCP2** — `spring.datasource.type=org.apache.commons.dbcp2.BasicDataSource`
 - **Oracle UCP** — best with Oracle DB; supports labelling, RAC failover, Application Continuity
+
+</ul>
 
 ### 5.21 @EntityGraph — Eager-Loading Graphs
 
@@ -1761,8 +1817,12 @@ Hibernate implements this by silently appending `AND version = ?` to every `UPDA
 `@Modifying` marks a non-SELECT `@Query` (UPDATE, DELETE, INSERT via native SQL). Without it, Spring Data throws an exception because it expects a SELECT.
 
 **Why not just `save()` in a loop?**
+<ul>
+
 - `findAll()` + modify + `saveAll()` loads every entity into the first-level cache, runs a dirty check per entity, and issues one UPDATE per entity.
 - `@Modifying` issues a single SQL statement that the database executes in bulk — orders of magnitude faster for large sets.
+
+</ul>
 
 ```java
 // Bulk salary raise for an entire department — one SQL UPDATE statement
@@ -1789,8 +1849,12 @@ int purgeDeletedByCategory(@Param("category") String category);
 **`@Transactional` is required** — Spring Data repositories are not transactional by default for methods annotated with `@Query` that perform writes.
 
 **JPQL vs Native SQL for `@Modifying`:**
+<ul>
+
 - JPQL (`EmployeeEntity e SET e.salary`) — entity-level, respects type conversions and field mappings.
 - Native (`nativeQuery = true`) — raw SQL, targets the actual table and column names. Bypasses Hibernate entity lifecycle, so `@SQLDelete` is NOT triggered.
+
+</ul>
 
 **Files:** `EmployeeRepository.java` (lines 96–110), `ProductRepository.java` (lines 42–62)
 
@@ -1871,9 +1935,13 @@ public void serializableExample() { ... }
 ```
 
 **Anomaly definitions:**
+<ul>
+
 - **Dirty read** — you read a row another transaction has modified but not yet committed. If that transaction rolls back, your data never existed.
 - **Non-repeatable read** — you read the same row twice in one transaction and get different values (another transaction committed a change between your two reads).
 - **Phantom read** — you run the same range query twice and get different rows (another transaction inserted/deleted rows matching your predicate between reads).
+
+</ul>
 
 ```mermaid
 sequenceDiagram
@@ -1935,9 +2003,13 @@ public List<EmployeeEntity> readOnlyExample() { ... }
 ```
 
 `readOnly = true` benefits:
+<ul>
+
 - Hibernate skips dirty checking (no tracking what changed → faster).
 - Some JDBC drivers route the connection to a read-replica.
 - Acts as documentation — any accidental write will surface early in some providers.
+
+</ul>
 
 **Files:** `TransactionDemoService.java`, `AuditLogService.java`
 
@@ -2188,16 +2260,24 @@ WHERE d.dept_id = ?
 ```
 
 **Key rules:**
+<ul>
+
 - The parentheses `(…)` are **required** — Hibernate inlines the expression literally.
 - Column names inside `@Formula` are **SQL column names** (`dept_id`), not Java field names (`deptId`).
 - No setter, no `@Column`, no DB migration needed.
 - Cannot be used in JPQL `WHERE` clauses (it's not a real column). Use a native query if you need to filter on the value.
 - For expensive subqueries on large tables, consider materialized views or a real column updated by a trigger instead.
 
+</ul>
+
 **Use cases:**
+<ul>
+
 - Computed aggregates (count of children, sum of line items)
 - Derived fields (full name = first_name || ' ' || last_name)
 - Lightweight denormalization without schema changes
+
+</ul>
 
 **Files:** `DepartmentEntity.java` (line 45)
 
@@ -2423,8 +2503,12 @@ public int[] batchUpdateFromBeans(List<EmployeeRow> rows) {
 `SqlParameterSourceUtils.createBatch(list)` inspects the bean's getters (or record accessors) and maps them to named parameters automatically — no manual `MapSqlParameterSource` building.
 
 **Return types:**
+<ul>
+
 - `jdbcTemplate.batchUpdate(sql, list, chunkSize, setter)` → `int[][]`
 - `namedJdbc.batchUpdate(sql, SqlParameterSource[])` → `int[]`
+
+</ul>
 
 **When to use batch vs loop:**
 
