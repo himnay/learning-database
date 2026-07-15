@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/learningdb
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: graph-db-pool
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    schemas: graph                    # all graph objects live in their own schema
+    default-schema: graph             # flyway_schema_history also lands here — no clash with database-core
+    create-schemas: true
+    baseline-on-migrate: true
+    validate-on-migrate: true
+
+server:
+  port: 8081                          # database-core owns 8080
