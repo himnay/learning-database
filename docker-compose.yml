@@ -1,8 +1,7 @@
-version: '3.8'
 
 services:
   postgres:
-    image: postgres:16
+    image: postgres:19beta1
     container_name: learning-db-postgres
     environment:
       POSTGRES_DB: learningdb
@@ -11,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql   # PG18+: mount the parent dir (versioned subdir layout)
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d learningdb"]
       interval: 10s
