@@ -4,14 +4,25 @@
 
 A multi-module **Spring Boot + PostgreSQL 19** learning project. One shared database (`learningdb`, started via Docker Compose), one module per topic — each module owns its own schema, Flyway migrations, and README.
 
-## Modules
+## Table of Contents
+
+1. 📦 [Modules](#1-modules)
+2. 🚀 [Quick Start](#2-quick-start)
+3. 🔌 [Database Connection](#3-database-connection)
+4. 🏗️ [Repository Layout](#4-repository-layout)
+
+---
+
+<a id="1-modules"></a>
+## 1. 📦 Modules
 
 | Module | Port | Schema | What it covers |
 |---|---|---|---|
 | [database-core](database-core/README.md) | 8080 | `public` | SQL interview query problems (window functions, pivot, Nth-highest salary …) and a complete Spring Data JPA reference: relationships, cascades, inheritance strategies, projections, Specifications, auditing, soft delete, locking, `@Transactional`, JDBC, HikariCP |
 | [database-graph](database-graph/README.md) | 8081 | `graph` | PostgreSQL 19 **SQL/PGQ** property graphs: `CREATE PROPERTY GRAPH`, `GRAPH_TABLE` / `MATCH` pattern queries, heterogeneous graphs, multiple labels, edge properties, and recursive-CTE fallbacks for variable-length paths |
 
-## Quick Start
+<a id="2-quick-start"></a>
+## 2. 🚀 Quick Start
 
 ```bash
 # 1. Start PostgreSQL 19 (shared by all modules)
@@ -25,7 +36,8 @@ mvn -pl database-core  spring-boot:run   # http://localhost:8080
 mvn -pl database-graph spring-boot:run   # http://localhost:8081
 ```
 
-### Database Connection
+<a id="3-database-connection"></a>
+## 3. 🔌 Database Connection
 
 | Property | Value |
 |---|---|
@@ -35,7 +47,8 @@ mvn -pl database-graph spring-boot:run   # http://localhost:8081
 | Username | `postgres` |
 | Password | `postgres` |
 
-## Repository Layout
+<a id="4-repository-layout"></a>
+## 4. 🏗️ Repository Layout
 
 ```
 learning-database/

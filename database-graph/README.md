@@ -10,22 +10,23 @@ A module of the [learning-database](../README.md) project demonstrating **SQL/PG
 
 ## Table of Contents
 
-1. [What is SQL/PGQ?](#1-what-is-sqlpgq)
-2. [Quick Start](#2-quick-start)
-3. [Module Structure](#3-module-structure)
-4. [Defining a Property Graph](#4-defining-a-property-graph)
-5. [Your First Graph Query](#5-your-first-graph-query)
-6. [Single-Hop and Multi-Hop Traversals](#6-single-hop-and-multi-hop-traversals)
-7. [Edge Directions: `->`, `<-`, `-`](#7-edge-directions)
-8. [Heterogeneous Graphs & Multiple Labels](#8-heterogeneous-graphs--multiple-labels)
-9. [Mixing GRAPH_TABLE with Classic SQL](#9-mixing-graph_table-with-classic-sql)
-10. [Under the Hood — EXPLAIN](#10-under-the-hood--explain)
-11. [Limitations in PostgreSQL 19](#11-limitations-in-postgresql-19)
-12. [REST Endpoints](#12-rest-endpoints)
+1. 🕸️ [What is SQL/PGQ?](#1-what-is-sqlpgq)
+2. 🚀 [Quick Start](#2-quick-start)
+3. 🏗️ [Module Structure](#3-module-structure)
+4. 🗄️ [Defining a Property Graph](#4-defining-a-property-graph)
+5. 🔍 [Your First Graph Query](#5-your-first-graph-query)
+6. 🔗 [Single-Hop and Multi-Hop Traversals](#6-single-hop-and-multi-hop-traversals)
+7. ↔️ [Edge Directions: `->`, `<-`, `-`](#7-edge-directions)
+8. 🧩 [Heterogeneous Graphs & Multiple Labels](#8-heterogeneous-graphs--multiple-labels)
+9. 🧮 [Mixing GRAPH_TABLE with Classic SQL](#9-mixing-graph_table-with-classic-sql)
+10. ⚙️ [Under the Hood — EXPLAIN](#10-under-the-hood--explain)
+11. ⚠️ [Limitations in PostgreSQL 19](#11-limitations-in-postgresql-19)
+12. 🌐 [REST Endpoints](#12-rest-endpoints)
 
 ---
 
-## 1. What is SQL/PGQ?
+<a id="1-what-is-sqlpgq"></a>
+## 1. 🕸️ What is SQL/PGQ?
 
 PostgreSQL 19 adds two SQL constructs:
 
@@ -50,7 +51,8 @@ Two graphs are built in this module:
 
 All objects live in the dedicated **`graph` schema** of `learningdb`, so this module never collides with `database-core` (which owns `public`).
 
-## 2. Quick Start
+<a id="2-quick-start"></a>
+## 2. 🚀 Quick Start
 
 ```bash
 # 1. Start PostgreSQL 19 (from the repository root)
@@ -63,7 +65,8 @@ mvn -pl database-graph spring-boot:run
 curl "http://localhost:8081/api/graph/social/friends-of-friends?name=Alice"
 ```
 
-## 3. Module Structure
+<a id="3-module-structure"></a>
+## 3. 🏗️ Module Structure
 
 ```
 database-graph/
@@ -86,7 +89,8 @@ database-graph/
 
 Queries run through `JdbcTemplate` — Hibernate cannot parse `GRAPH_TABLE`, and it doesn't need to: the SQL is rewritten server-side.
 
-## 4. Defining a Property Graph
+<a id="4-defining-a-property-graph"></a>
+## 4. 🗄️ Defining a Property Graph
 
 Take the smallest possible social network — a `person` table and a `knows` table mapping who knows whom:
 
@@ -151,7 +155,8 @@ Notes:
 - `SOURCE`/`DESTINATION` keys can be inferred from foreign keys when unambiguous.
 - Reserved words used as labels must be quoted (`LABEL "order"`).
 
-## 5. Your First Graph Query
+<a id="5-your-first-graph-query"></a>
+## 5. 🔍 Your First Graph Query
 
 ```sql
 SELECT name
@@ -179,7 +184,8 @@ Logically equivalent to `SELECT name FROM person ORDER BY name`. Gotchas:
 - `COLUMNS` takes an explicit list — `COLUMNS (p.*)` fails with `ERROR: "*" is not supported here`.
 - A `WHERE` clause may appear **inside** an element pattern — `(p IS person WHERE p.city = 'Berlin')` — or after the whole `MATCH`.
 
-## 6. Single-Hop and Multi-Hop Traversals
+<a id="6-single-hop-and-multi-hop-traversals"></a>
+## 6. 🔗 Single-Hop and Multi-Hop Traversals
 
 **Who knows whom** — `(a)-[IS knows]->(b)` is an edge pattern; the arrow follows the edge in its declared direction (SOURCE → DESTINATION):
 
@@ -214,7 +220,8 @@ ORDER BY a, c, via;
 (11 rows)
 ```
 
-## 7. Edge Directions
+<a id="7-edge-directions"></a>
+## 7. ↔️ Edge Directions
 
 | Pattern | Meaning |
 |---|---|
@@ -224,7 +231,8 @@ ORDER BY a, c, via;
 
 See `SocialGraphService.whoIsKnownBy()` and `.connections()` for both variants.
 
-## 8. Heterogeneous Graphs & Multiple Labels
+<a id="8-heterogeneous-graphs--multiple-labels"></a>
+## 8. 🧩 Heterogeneous Graphs & Multiple Labels
 
 Real graphs mix vertex types. The `myshop` graph ([V4](src/main/resources/db/migration/V4__shop_property_graph.sql)) exercises the full DDL feature set:
 
@@ -286,7 +294,8 @@ FROM GRAPH_TABLE (myshop
 WHERE rec_name <> 'Wireless Headphones';
 ```
 
-## 9. Mixing GRAPH_TABLE with Classic SQL
+<a id="9-mixing-graph_table-with-classic-sql"></a>
+## 9. 🧮 Mixing GRAPH_TABLE with Classic SQL
 
 `GRAPH_TABLE` yields an ordinary row set, so CTEs, joins and aggregation compose naturally:
 
@@ -306,7 +315,8 @@ LEFT JOIN spend s ON s.customer = c.name
 ORDER BY total_spend DESC;
 ```
 
-## 10. Under the Hood — EXPLAIN
+<a id="10-under-the-hood--explain"></a>
+## 10. ⚙️ Under the Hood — EXPLAIN
 
 `EXPLAIN` on the friends-of-friends query shows **no graph executor nodes** — only ordinary hash joins over `person` and `knows`:
 
@@ -327,7 +337,8 @@ ORDER BY total_spend DESC;
 
 PostgreSQL simply rewrites the graph pattern into joins behind the scenes. You get more compact, intention-revealing syntax — and the `CREATE PROPERTY GRAPH` statement doubles as documentation of your data model. Try it live: `GET /api/graph/social/explain`.
 
-## 11. Limitations in PostgreSQL 19
+<a id="11-limitations-in-postgresql-19"></a>
+## 11. ⚠️ Limitations in PostgreSQL 19
 
 - **Fixed-depth patterns only.** Variable-length quantifiers (`+`, `*`, `{2,5}`), shortest-path and flood-fill are **not** yet supported — planned for future releases. Open-ended traversals still need a recursive CTE (see `SocialGraphService.reachable()`):
 
@@ -350,7 +361,8 @@ GROUP BY p.name;
 - Property graphs are **read-only views**; you still modify data through the underlying tables.
 - For billion-edge workloads and advanced graph algorithms (PageRank, community detection), dedicated graph databases remain the better tool.
 
-## 12. REST Endpoints
+<a id="12-rest-endpoints"></a>
+## 12. 🌐 REST Endpoints
 
 | Endpoint | Demonstrates |
 |---|---|

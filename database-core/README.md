@@ -5,6 +5,60 @@
 The core module of the [learning-database](../README.md) multi-module project, covering **SQL interview questions** and every major **Spring Data JPA concept**.  
 All tables are created and seeded automatically by Flyway on startup.
 
+## Table of Contents
+
+- 📌 [What database-core does](#what-database-core-does)
+- 💡 [Why this project exists](#why-this-project-exists)
+  - 🏛️ Architecture at a glance
+1. 🚀 [Quick Start](#1-quick-start)
+2. 🏗️ [Project Structure](#2-project-structure)
+3. 🗄️ [Flyway Migrations](#3-flyway-migrations)
+4. 🗄️ [SQL Interview Query Problems](#4-sql-interview-query-problems)
+   - Q1 Employee & Department — JOIN, GROUP BY, MAX
+   - Q2 HAVING vs WHERE
+   - Q3 ROW_NUMBER vs RANK vs DENSE_RANK
+   - Q4 Nth Highest Salary
+   - Q5 Nth Highest Salary with Index
+   - Q6 Pivot Table
+   - Q7 Swap Two Columns
+   - Q8 NTILE()
+   - Q9 LAG() and LEAD()
+   - Q10 Kth Rating in a Restaurant
+5. 🗄️ [Spring Data JPA Concepts](#5-spring-data-jpa-concepts)
+   - 5.1 Spring Data Overview
+   - 5.2 JPA vs Hibernate
+   - 5.3 CrudRepository vs JpaRepository
+   - 5.4 Relationships & Associations
+   - 5.5 Cascade Types
+   - 5.6 Fetch Types & N+1 Problem
+   - 5.7 @JoinColumn vs @JoinTable
+   - 5.8 OrphanRemoval vs CascadeType.REMOVE
+   - 5.9 Inheritance Strategies
+   - 5.10 Projections
+   - 5.11 Dynamic Queries — JPA Specification
+   - 5.12 Dynamic Queries — Query By Example (QBE)
+   - 5.13 @Embeddable & @EmbeddedId (Composite Keys)
+   - 5.14 Spring Data Auditing
+   - 5.15 Soft Delete
+   - 5.16 Paging, Sorting & Slicing
+   - 5.17 Stored Procedures & DB Functions
+   - 5.18 JDBC — RowMapper, ResultSetExtractor, RowCallbackHandler
+   - 5.19 NamedParameterJdbcTemplate
+   - 5.20 Connection Pool (HikariCP)
+   - 5.21 @EntityGraph — Eager-Loading Graphs
+   - 5.22 @Lock — Pessimistic & Optimistic Locking
+   - 5.23 @Modifying — Bulk UPDATE / DELETE
+   - 5.24 @Transactional — Propagation, Isolation, rollbackFor, timeout
+   - 5.25 Window / ScrollPosition API (Keyset Pagination)
+   - 5.26 @SQLRestriction vs @Filter (Soft Delete Approaches)
+   - 5.27 @Convert / AttributeConverter
+   - 5.28 @Formula — Computed Columns
+   - 5.29 @BatchSize and @Fetch(SUBSELECT) — N+1 Alternatives
+   - 5.30 Jackson Serialization — @JsonManagedReference / @JsonBackReference / @JsonIgnoreProperties
+   - 5.31 JdbcTemplate.batchUpdate()
+6. 🗄️ [Database Schema Overview](#6-database-schema-overview)
+7. 🗄️ [Connect to the Database](#7-connect-to-the-database)
+
 ## What database-core does
 
 `database-core` is a runnable Spring Boot application (port **8080**) that owns the `public` schema of the shared `learningdb` PostgreSQL 19 database. It bundles four things into one module:
@@ -62,58 +116,6 @@ At startup, Flyway inspects `db/migration`, compares each script's checksum agai
 
 ---
 
-## Table of Contents
-
-1. 🚀 [Quick Start](#1-quick-start)
-2. 🏗️ [Project Structure](#2-project-structure)
-3. 🗄️ [Flyway Migrations](#3-flyway-migrations)
-4. 🗄️ [SQL Interview Query Problems](#4-sql-interview-query-problems)
-   - Q1 Employee & Department — JOIN, GROUP BY, MAX
-   - Q2 HAVING vs WHERE
-   - Q3 ROW_NUMBER vs RANK vs DENSE_RANK
-   - Q4 Nth Highest Salary
-   - Q5 Nth Highest Salary with Index
-   - Q6 Pivot Table
-   - Q7 Swap Two Columns
-   - Q8 NTILE()
-   - Q9 LAG() and LEAD()
-   - Q10 Kth Rating in a Restaurant
-5. 🗄️ [Spring Data JPA Concepts](#5-spring-data-jpa-concepts)
-   - 5.1 Spring Data Overview
-   - 5.2 JPA vs Hibernate
-   - 5.3 CrudRepository vs JpaRepository
-   - 5.4 Relationships & Associations
-   - 5.5 Cascade Types
-   - 5.6 Fetch Types & N+1 Problem
-   - 5.7 @JoinColumn vs @JoinTable
-   - 5.8 OrphanRemoval vs CascadeType.REMOVE
-   - 5.9 Inheritance Strategies
-   - 5.10 Projections
-   - 5.11 Dynamic Queries — JPA Specification
-   - 5.12 Dynamic Queries — Query By Example (QBE)
-   - 5.13 @Embeddable & @EmbeddedId (Composite Keys)
-   - 5.14 Spring Data Auditing
-   - 5.15 Soft Delete
-   - 5.16 Paging, Sorting & Slicing
-   - 5.17 Stored Procedures & DB Functions
-   - 5.18 JDBC — RowMapper, ResultSetExtractor, RowCallbackHandler
-   - 5.19 NamedParameterJdbcTemplate
-   - 5.20 Connection Pool (HikariCP)
-   - 5.21 @EntityGraph — Eager-Loading Graphs
-   - 5.22 @Lock — Pessimistic & Optimistic Locking
-   - 5.23 @Modifying — Bulk UPDATE / DELETE
-   - 5.24 @Transactional — Propagation, Isolation, rollbackFor, timeout
-   - 5.25 Window / ScrollPosition API (Keyset Pagination)
-   - 5.26 @SQLRestriction vs @Filter (Soft Delete Approaches)
-   - 5.27 @Convert / AttributeConverter
-   - 5.28 @Formula — Computed Columns
-   - 5.29 @BatchSize and @Fetch(SUBSELECT) — N+1 Alternatives
-   - 5.30 Jackson Serialization — @JsonManagedReference / @JsonBackReference / @JsonIgnoreProperties
-   - 5.31 JdbcTemplate.batchUpdate()
-6. 🗄️ [Database Schema Overview](#6-database-schema-overview)
-7. 🗄️ [Connect to the Database](#7-connect-to-the-database)
-
----
 
 <a id="1-quick-start"></a>
 ## 1. 🚀 Quick Start
