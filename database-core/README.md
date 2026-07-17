@@ -147,13 +147,13 @@ mvn -pl database-core spring-boot:run
 
 ### Database Connection Details
 
-| Property | Value |
-|---|---|
-| Host | `localhost` |
-| Port | `5432` |
+| Property | Value        |
+|----------|--------------|
+| Host     | `localhost`  |
+| Port     | `5432`       |
 | Database | `learningdb` |
-| Username | `postgres` |
-| Password | `postgres` |
+| Username | `postgres`   |
+| Password | `postgres`   |
 
 ---
 
@@ -293,18 +293,18 @@ flowchart LR
 
 Each script only ever runs once per database (tracked by version number in `flyway_schema_history`); re-running `mvn spring-boot:run` against an already-migrated database is a no-op for schema changes.
 
-| Version | File | What it creates |
-|---|---|---|
-| V1 | `create_departments.sql` | `departments` table + 4 rows |
-| V2 | `create_employees.sql` | `employees` table + 10 rows across 4 depts |
-| V3 | `create_emp_test.sql` | `emp_test` table (A/B/C/D + salaries) + salary index |
-| V4 | `create_scores.sql` | `scores` table (Aarav/Priya/Rahul, 3 subjects each) |
-| V5 | `create_deliveries.sql` | `deliveries` table (10 restaurant orders) |
-| V6 | `jpa_relationship_tables.sql` | `jpa_address`, `jpa_user`, `jpa_customer`, `jpa_order`, `jpa_student`, `jpa_course`, `jpa_student_course` |
-| V7 | `jpa_inheritance_tables.sql` | `vehicle`, `payment`, `credit_card_payment`, `bank_transfer_payment`, `computer`, `mobile_phone`, `dog`, `cat`, `animal_seq` |
-| V8 | `jpa_other_tables.sql` | `jpa_order_item` (composite PK), `product` (soft delete + audit) |
-| V9 | `stored_procedures.sql` | 3 PostgreSQL functions: `get_total_employees`, `get_employee_count_by_dept`, `get_dept_salary_stats` |
-| V10 | `additional_columns.sql` | `ALTER TABLE product ADD COLUMN priority VARCHAR(20)` + `CREATE TABLE stock_item` (id, name, stock, deleted) + seed data |
+| Version | File                          | What it creates                                                                                                              |
+|---------|-------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| V1      | `create_departments.sql`      | `departments` table + 4 rows                                                                                                 |
+| V2      | `create_employees.sql`        | `employees` table + 10 rows across 4 depts                                                                                   |
+| V3      | `create_emp_test.sql`         | `emp_test` table (A/B/C/D + salaries) + salary index                                                                         |
+| V4      | `create_scores.sql`           | `scores` table (Aarav/Priya/Rahul, 3 subjects each)                                                                          |
+| V5      | `create_deliveries.sql`       | `deliveries` table (10 restaurant orders)                                                                                    |
+| V6      | `jpa_relationship_tables.sql` | `jpa_address`, `jpa_user`, `jpa_customer`, `jpa_order`, `jpa_student`, `jpa_course`, `jpa_student_course`                    |
+| V7      | `jpa_inheritance_tables.sql`  | `vehicle`, `payment`, `credit_card_payment`, `bank_transfer_payment`, `computer`, `mobile_phone`, `dog`, `cat`, `animal_seq` |
+| V8      | `jpa_other_tables.sql`        | `jpa_order_item` (composite PK), `product` (soft delete + audit)                                                             |
+| V9      | `stored_procedures.sql`       | 3 PostgreSQL functions: `get_total_employees`, `get_employee_count_by_dept`, `get_dept_salary_stats`                         |
+| V10     | `additional_columns.sql`      | `ALTER TABLE product ADD COLUMN priority VARCHAR(20)` + `CREATE TABLE stock_item` (id, name, stock, deleted) + seed data     |
 
 ---
 
@@ -392,11 +392,11 @@ HAVING COUNT(*) > 2;  -- ✅ Engineering (4) and Sales (3)
 
 **Table:** `emp_test` — intentionally has two rows with salary 4000 (B and C) to show tie behaviour.
 
-| Function | Tie behaviour | Gaps after tie? |
-|---|---|---|
-| `ROW_NUMBER()` | Always unique — arbitrary order for ties | N/A |
-| `RANK()` | Same rank for ties | Yes — skips the next number |
-| `DENSE_RANK()` | Same rank for ties | No — continuous numbering |
+| Function       | Tie behaviour                            | Gaps after tie?             |
+|----------------|------------------------------------------|-----------------------------|
+| `ROW_NUMBER()` | Always unique — arbitrary order for ties | N/A                         |
+| `RANK()`       | Same rank for ties                       | Yes — skips the next number |
+| `DENSE_RANK()` | Same rank for ties                       | No — continuous numbering   |
 
 **Why this matters:** window functions (the `OVER (...)` clause) let you compute a value across a *set of related rows* — a "window" — without collapsing those rows into one, the way `GROUP BY` would. `PARTITION BY` (not used in this simple example, but used implicitly by the single global window here) defines which rows belong to the same window; `ORDER BY` inside `OVER (...)` defines the order used to compute the ranking/offset for each row. This is what lets Q3, Q8, and Q9 answer "rank/percentile/previous value *within this group*" in a single pass over the table instead of a self-join or application-side loop.
 
@@ -634,11 +634,11 @@ Spring Data is an umbrella project providing a consistent programming model acro
 
 ### 5.2 JPA vs Hibernate
 
-| | JPA | Hibernate |
-|---|---|---|
-| What it is | Specification (Jakarta EE standard) | Implementation / Provider |
-| Package | `jakarta.persistence.*` | `org.hibernate.*` |
-| Other providers | EclipseLink, OpenJPA, DataNucleus | — |
+|                 | JPA                                 | Hibernate                 |
+|-----------------|-------------------------------------|---------------------------|
+| What it is      | Specification (Jakarta EE standard) | Implementation / Provider |
+| Package         | `jakarta.persistence.*`             | `org.hibernate.*`         |
+| Other providers | EclipseLink, OpenJPA, DataNucleus   | —                         |
 
 > Always code against JPA interfaces. Only use Hibernate-specific features (`@SQLDelete`, `@Filter`, `@FilterDef`) when JPA has no equivalent.
 
@@ -807,14 +807,14 @@ private List<StudentEntity> students;
 
 Cascade propagates state transitions from parent to child.
 
-| CascadeType | What it does |
-|---|---|
-| `PERSIST` | Saving parent also saves new children |
-| `MERGE` | Merging parent also merges children |
-| `REMOVE` | Deleting parent also deletes all children |
-| `REFRESH` | Refreshing parent also refreshes children |
-| `DETACH` | Detaching parent also detaches children |
-| `ALL` | All of the above (use with caution on ManyToMany!) |
+| CascadeType | What it does                                       |
+|-------------|----------------------------------------------------|
+| `PERSIST`   | Saving parent also saves new children              |
+| `MERGE`     | Merging parent also merges children                |
+| `REMOVE`    | Deleting parent also deletes all children          |
+| `REFRESH`   | Refreshing parent also refreshes children          |
+| `DETACH`    | Detaching parent also detaches children            |
+| `ALL`       | All of the above (use with caution on ManyToMany!) |
 
 > **Warning:** `CascadeType.ALL` on a `@ManyToMany` raises a red flag — deleting one student would delete all their enrolled courses, affecting other students.
 
@@ -824,10 +824,10 @@ Hibernate-specific extras: `REPLICATE`, `SAVE_UPDATE`, `LOCK`.
 
 ### 5.6 Fetch Types & N+1 Problem
 
-| FetchType | Behaviour | Default for |
-|---|---|---|
-| `LAZY` | Associated entities loaded as proxies; DB hit only on first access | `@OneToMany`, `@ManyToMany` |
-| `EAGER` | Associated entities loaded immediately with the parent | `@ManyToOne`, `@OneToOne` |
+| FetchType | Behaviour                                                          | Default for                 |
+|-----------|--------------------------------------------------------------------|-----------------------------|
+| `LAZY`    | Associated entities loaded as proxies; DB hit only on first access | `@OneToMany`, `@ManyToMany` |
+| `EAGER`   | Associated entities loaded immediately with the parent             | `@ManyToOne`, `@OneToOne`   |
 
 `LAZY` associations are backed by a runtime-generated proxy subclass (or a bytecode-instrumented field) — accessing `department.getEmployees()` for the first time is what triggers Hibernate to open a `Session` round-trip and populate the real collection. This is powerful (you only pay for what you use) and dangerous (the query happens implicitly, often deep inside a loop, far from where the collection was fetched) — which is exactly the shape of the N+1 problem below.
 
@@ -882,11 +882,11 @@ List<DepartmentEntity> findAllWithEmployees();
 
 ### 5.7 @JoinColumn vs @JoinTable
 
-| Annotation | Used for |
-|---|---|
-| `@JoinColumn` | Single FK column on the owning entity (`@OneToOne`, `@ManyToOne`) |
-| `@JoinColumns` | Multiple FK columns forming a composite FK |
-| `@JoinTable` | A separate join table (`@ManyToMany` or unidirectional `@OneToMany`) |
+| Annotation     | Used for                                                             |
+|----------------|----------------------------------------------------------------------|
+| `@JoinColumn`  | Single FK column on the owning entity (`@OneToOne`, `@ManyToOne`)    |
+| `@JoinColumns` | Multiple FK columns forming a composite FK                           |
+| `@JoinTable`   | A separate join table (`@ManyToMany` or unidirectional `@OneToMany`) |
 
 ```java
 // Single FK
@@ -910,10 +910,10 @@ List<DepartmentEntity> findAllWithEmployees();
 
 ### 5.8 OrphanRemoval vs CascadeType.REMOVE
 
-| | `CascadeType.REMOVE` | `orphanRemoval = true` |
-|---|---|---|
-| When triggered | Parent entity is deleted | Child is removed from the parent's collection |
-| Scope | Deletes ALL children when parent is deleted | Deletes only the child that was de-referenced |
+|                | `CascadeType.REMOVE`                        | `orphanRemoval = true`                        |
+|----------------|---------------------------------------------|-----------------------------------------------|
+| When triggered | Parent entity is deleted                    | Child is removed from the parent's collection |
+| Scope          | Deletes ALL children when parent is deleted | Deletes only the child that was de-referenced |
 
 ```java
 // orphanRemoval in action
@@ -1121,12 +1121,12 @@ public abstract class AnimalEntity {
 
 #### Inheritance Strategy Comparison
 
-| Strategy | Polymorphic queries | NOT NULL on subclass cols | JOINs needed | Schema complexity |
-|---|---|---|---|---|
-| `@MappedSuperclass` | ❌ No | ✅ Yes | ❌ No | Low |
-| `SINGLE_TABLE` | ✅ Yes | ❌ No | ❌ No | Low |
-| `JOINED` | ✅ Yes | ✅ Yes | ✅ Yes | Medium |
-| `TABLE_PER_CLASS` | ✅ (UNION ALL) | ✅ Yes | ❌ No | High |
+| Strategy            | Polymorphic queries | NOT NULL on subclass cols | JOINs needed | Schema complexity |
+|---------------------|---------------------|---------------------------|--------------|-------------------|
+| `@MappedSuperclass` | ❌ No                | ✅ Yes                     | ❌ No         | Low               |
+| `SINGLE_TABLE`      | ✅ Yes               | ❌ No                      | ❌ No         | Low               |
+| `JOINED`            | ✅ Yes               | ✅ Yes                     | ✅ Yes        | Medium            |
+| `TABLE_PER_CLASS`   | ✅ (UNION ALL)       | ✅ Yes                     | ❌ No         | High              |
 
 ---
 
@@ -1278,13 +1278,13 @@ List<EmployeeEntity> results = employeeRepository.findAll(Example.of(probe, matc
 
 **Useful matcher methods:**
 
-| Method | Effect |
-|---|---|
-| `.withIgnoreCase("field")` | Case-insensitive comparison |
-| `.withIgnorePaths("field")` | Exclude this field from the WHERE clause |
-| `.withIgnoreNullValues()` | Null probe fields = no filter (most common) |
-| `.withNullHandler(INCLUDE)` | Null probe fields = `IS NULL` in WHERE |
-| `.withStringMatcher(CONTAINING)` | Apply LIKE `%value%` to all String fields |
+| Method                           | Effect                                      |
+|----------------------------------|---------------------------------------------|
+| `.withIgnoreCase("field")`       | Case-insensitive comparison                 |
+| `.withIgnorePaths("field")`      | Exclude this field from the WHERE clause    |
+| `.withIgnoreNullValues()`        | Null probe fields = no filter (most common) |
+| `.withNullHandler(INCLUDE)`      | Null probe fields = `IS NULL` in WHERE      |
+| `.withStringMatcher(CONTAINING)` | Apply LIKE `%value%` to all String fields   |
 
 ---
 
@@ -1414,12 +1414,12 @@ public List<ProductEntity> findActiveProducts() {
 
 #### Page vs Slice
 
-| | `Page<T>` | `Slice<T>` |
-|---|---|---|
-| Runs COUNT query | ✅ Yes | ❌ No |
-| Knows total pages | ✅ Yes | ❌ No |
-| Knows hasNext() | ✅ Yes | ✅ Yes |
-| Best for | Traditional pagination UI | Infinite scroll / batch processing |
+|                   | `Page<T>`                 | `Slice<T>`                         |
+|-------------------|---------------------------|------------------------------------|
+| Runs COUNT query  | ✅ Yes                     | ❌ No                               |
+| Knows total pages | ✅ Yes                     | ❌ No                               |
+| Knows hasNext()   | ✅ Yes                     | ✅ Yes                              |
+| Best for          | Traditional pagination UI | Infinite scroll / batch processing |
 
 ```java
 // EmployeeRepository.java
@@ -1505,11 +1505,11 @@ BigDecimal avg = (BigDecimal) query.getOutputParameterValue("p_avg_sal");
 
 **Stored functions available (V9 migration):**
 
-| Function | Parameters | Returns |
-|---|---|---|
-| `get_total_employees()` | — | `INTEGER` |
-| `get_employee_count_by_dept(p_dept_id)` | `IN INTEGER` | `INTEGER` |
-| `get_dept_salary_stats(p_dept_id, OUT min, OUT max, OUT avg)` | IN/OUT | `NUMERIC` × 3 |
+| Function                                                      | Parameters   | Returns       |
+|---------------------------------------------------------------|--------------|---------------|
+| `get_total_employees()`                                       | —            | `INTEGER`     |
+| `get_employee_count_by_dept(p_dept_id)`                       | `IN INTEGER` | `INTEGER`     |
+| `get_dept_salary_stats(p_dept_id, OUT min, OUT max, OUT avg)` | IN/OUT       | `NUMERIC` × 3 |
 
 ---
 
@@ -1566,11 +1566,11 @@ jdbcTemplate.query("SELECT * FROM employees WHERE salary > ?", handler, 70000.0)
 
 #### Summary
 
-| Callback | Returns | When to use |
-|---|---|---|
-| `RowMapper<T>` | `List<T>` | Simple row → object mapping |
-| `ResultSetExtractor<T>` | Any single `T` | Complex multi-row aggregation |
-| `RowCallbackHandler` | `void` | Streaming, no data stored in memory |
+| Callback                | Returns        | When to use                         |
+|-------------------------|----------------|-------------------------------------|
+| `RowMapper<T>`          | `List<T>`      | Simple row → object mapping         |
+| `ResultSetExtractor<T>` | Any single `T` | Complex multi-row aggregation       |
+| `RowCallbackHandler`    | `void`         | Streaming, no data stored in memory |
 
 ---
 
@@ -1707,12 +1707,12 @@ WHERE e.first_name LIKE ?
 
 **@EntityGraph vs JOIN FETCH — when to use each:**
 
-| | `@EntityGraph` | `JOIN FETCH` in JPQL |
-|---|---|---|
-| Works with derived method names | Yes | No (needs custom `@Query`) |
-| Works with `Pageable` | Yes (separate COUNT query) | No (Hibernate warns — in-memory pagination) |
-| Flexibility | Limited to simple paths | Full JPQL control |
-| Best for | Clean repo APIs | Complex multi-join queries |
+|                                 | `@EntityGraph`             | `JOIN FETCH` in JPQL                        |
+|---------------------------------|----------------------------|---------------------------------------------|
+| Works with derived method names | Yes                        | No (needs custom `@Query`)                  |
+| Works with `Pageable`           | Yes (separate COUNT query) | No (Hibernate warns — in-memory pagination) |
+| Flexibility                     | Limited to simple paths    | Full JPQL control                           |
+| Best for                        | Clean repo APIs            | Complex multi-join queries                  |
 
 **Files:** `EmployeeEntity.java` (lines 22–26), `EmployeeRepository.java` (lines 49–54)
 
@@ -1821,13 +1821,13 @@ Hibernate implements this by silently appending `AND version = ?` to every `UPDA
 
 **Comparison:**
 
-| | Pessimistic Write | Pessimistic Read | Optimistic |
-|---|---|---|---|
-| SQL lock | `FOR UPDATE` | `FOR SHARE` | None |
-| Blocking | Yes | Only for writers | No |
-| Failure point | At read (waits or times out) | At read | At commit (`OptimisticLockException`) |
-| Best for | High-contention writes | Read-heavy, protect from writes | Low-contention, high-throughput |
-| Requires `@Version` | No | No | Yes |
+|                     | Pessimistic Write            | Pessimistic Read                | Optimistic                            |
+|---------------------|------------------------------|---------------------------------|---------------------------------------|
+| SQL lock            | `FOR UPDATE`                 | `FOR SHARE`                     | None                                  |
+| Blocking            | Yes                          | Only for writers                | No                                    |
+| Failure point       | At read (waits or times out) | At read                         | At commit (`OptimisticLockException`) |
+| Best for            | High-contention writes       | Read-heavy, protect from writes | Low-contention, high-throughput       |
+| Requires `@Version` | No                           | No                              | Yes                                   |
 
 **Files:** `EmployeeRepository.java` (lines 56–84), `AuditableBase.java`
 
@@ -1889,15 +1889,15 @@ Spring's `@Transactional` is more than "wrap this in a transaction." It controls
 
 #### Propagation — what happens when a transactional method calls another
 
-| Propagation | Behaviour |
-|---|---|
-| `REQUIRED` *(default)* | Join the caller's transaction if one exists. Create a new one otherwise. |
-| `REQUIRES_NEW` | Always suspend the caller's transaction and start a brand new independent one. |
-| `MANDATORY` | Must run inside an existing transaction. Throws `IllegalTransactionStateException` if none. |
-| `SUPPORTS` | Join if one exists; run non-transactionally if not. |
-| `NOT_SUPPORTED` | Always suspend any active transaction; run without one. |
-| `NEVER` | Must NOT have an active transaction. Throws if one exists. |
-| `NESTED` | Create a savepoint inside the existing transaction. Rollback goes to the savepoint, not the beginning. |
+| Propagation            | Behaviour                                                                                              |
+|------------------------|--------------------------------------------------------------------------------------------------------|
+| `REQUIRED` *(default)* | Join the caller's transaction if one exists. Create a new one otherwise.                               |
+| `REQUIRES_NEW`         | Always suspend the caller's transaction and start a brand new independent one.                         |
+| `MANDATORY`            | Must run inside an existing transaction. Throws `IllegalTransactionStateException` if none.            |
+| `SUPPORTS`             | Join if one exists; run non-transactionally if not.                                                    |
+| `NOT_SUPPORTED`        | Always suspend any active transaction; run without one.                                                |
+| `NEVER`                | Must NOT have an active transaction. Throws if one exists.                                             |
+| `NESTED`               | Create a savepoint inside the existing transaction. Rollback goes to the savepoint, not the beginning. |
 
 **The REQUIRES_NEW audit pattern** — a canonical use case:
 
@@ -1942,12 +1942,12 @@ sequenceDiagram
 
 #### Isolation — what concurrent transactions can see
 
-| Isolation Level | Dirty Read | Non-Repeatable Read | Phantom Read |
-|---|---|---|---|
-| `READ_UNCOMMITTED` | Possible | Possible | Possible |
-| `READ_COMMITTED` *(PostgreSQL default)* | Prevented | Possible | Possible |
-| `REPEATABLE_READ` | Prevented | Prevented | Possible |
-| `SERIALIZABLE` | Prevented | Prevented | Prevented |
+| Isolation Level                         | Dirty Read | Non-Repeatable Read | Phantom Read |
+|-----------------------------------------|------------|---------------------|--------------|
+| `READ_UNCOMMITTED`                      | Possible   | Possible            | Possible     |
+| `READ_COMMITTED` *(PostgreSQL default)* | Prevented  | Possible            | Possible     |
+| `REPEATABLE_READ`                       | Prevented  | Prevented           | Possible     |
+| `SERIALIZABLE`                          | Prevented  | Prevented           | Prevented    |
 
 ```java
 @Transactional(isolation = Isolation.READ_COMMITTED, readOnly = true)
@@ -2113,13 +2113,13 @@ Window<ProductEntity> page = productRepository.findTop10ByDeletedFalse(position,
 
 **Comparison:**
 
-| | `Page<T>` | `Slice<T>` | `Window<T>` (keyset) |
-|---|---|---|---|
-| COUNT query | Yes | No | No |
-| OFFSET scan | Yes | Yes | No — uses WHERE cursor |
-| Performance at depth | O(N) | O(N) | O(1) |
-| Random page access | Yes | No | No — forward only |
-| Best for | Numbered pages | "Load more" | Infinite scroll on large tables |
+|                      | `Page<T>`      | `Slice<T>`  | `Window<T>` (keyset)            |
+|----------------------|----------------|-------------|---------------------------------|
+| COUNT query          | Yes            | No          | No                              |
+| OFFSET scan          | Yes            | Yes         | No — uses WHERE cursor          |
+| Performance at depth | O(N)           | O(N)        | O(1)                            |
+| Random page access   | Yes            | No          | No — forward only               |
+| Best for             | Numbered pages | "Load more" | Infinite scroll on large tables |
 
 **Files:** `EmployeeRepository.java` (lines 133–148), `ProductRepository.java` (line 33), `ProductService.java` (lines 99–137)
 
@@ -2174,13 +2174,13 @@ To see deleted rows you would need raw JDBC or a native query — there is no se
 
 #### When to use which
 
-| | `@Filter` (ProductEntity) | `@SQLRestriction` (StockItemEntity) |
-|---|---|---|
-| Activation | Manual — `session.enableFilter()` | Automatic — always active |
-| Runtime toggle | Yes | No |
-| Can query deleted rows | Yes (enable with `isDeleted=true`) | No |
-| Boilerplate | More (`@FilterDef` + `@ParamDef` + `@Filter`) | Minimal |
-| Best for | Admin views that need both states | Simple apps where deleted = gone |
+|                        | `@Filter` (ProductEntity)                     | `@SQLRestriction` (StockItemEntity) |
+|------------------------|-----------------------------------------------|-------------------------------------|
+| Activation             | Manual — `session.enableFilter()`             | Automatic — always active           |
+| Runtime toggle         | Yes                                           | No                                  |
+| Can query deleted rows | Yes (enable with `isDeleted=true`)            | No                                  |
+| Boilerplate            | More (`@FilterDef` + `@ParamDef` + `@Filter`) | Minimal                             |
+| Best for               | Admin views that need both states             | Simple apps where deleted = gone    |
 
 **`@SQLDelete` on both** — this annotation intercepts `repository.deleteById(id)` and replaces the SQL DELETE with an UPDATE. Without it, the row would be physically removed.
 
@@ -2367,13 +2367,13 @@ All employees for all departments are loaded in one round-trip, regardless of ho
 
 #### Comparison
 
-| Strategy | Extra queries | Memory | Notes |
-|---|---|---|---|
-| No mitigation (LAZY) | N | Low until access | Classic N+1 |
-| `JOIN FETCH` | 0 | Higher (Cartesian join) | Best for small collections |
-| `@BatchSize(size=20)` | ceil(N/20) | Moderate | Best general-purpose mitigation |
-| `@Fetch(SUBSELECT)` | 1 | Higher (all at once) | Best for small parent sets |
-| `@EntityGraph` | 0 | Higher (join) | Works with derived method names |
+| Strategy              | Extra queries | Memory                  | Notes                           |
+|-----------------------|---------------|-------------------------|---------------------------------|
+| No mitigation (LAZY)  | N             | Low until access        | Classic N+1                     |
+| `JOIN FETCH`          | 0             | Higher (Cartesian join) | Best for small collections      |
+| `@BatchSize(size=20)` | ceil(N/20)    | Moderate                | Best general-purpose mitigation |
+| `@Fetch(SUBSELECT)`   | 1             | Higher (all at once)    | Best for small parent sets      |
+| `@EntityGraph`        | 0             | Higher (join)           | Works with derived method names |
 
 `@BatchSize` and `@Fetch(SUBSELECT)` cannot be combined on the same collection — choose one.
 
@@ -2462,10 +2462,10 @@ private List<StudentEntity> students;
 
 #### Summary
 
-| Annotation | Relationship | Mechanism |
-|---|---|---|
-| `@JsonManagedReference` | OneToMany / parent side | Always serialized with child list |
-| `@JsonBackReference` | ManyToOne / child side | Always excluded from JSON |
+| Annotation              | Relationship              | Mechanism                               |
+|-------------------------|---------------------------|-----------------------------------------|
+| `@JsonManagedReference` | OneToMany / parent side   | Always serialized with child list       |
+| `@JsonBackReference`    | ManyToOne / child side    | Always excluded from JSON               |
 | `@JsonIgnoreProperties` | Either side of ManyToMany | Skips named property on the nested type |
 
 **Files:** `DepartmentEntity.java` (line 63), `EmployeeEntity.java` (line 80), `CustomerEntity.java`, `OrderEntity.java`, `StudentEntity.java`, `CourseEntity.java`
@@ -2540,12 +2540,12 @@ public int[] batchUpdateFromBeans(List<EmployeeRow> rows) {
 
 **When to use batch vs loop:**
 
-| | Loop (`update()` per row) | `batchUpdate()` |
-|---|---|---|
-| Round-trips | N | ceil(N / chunkSize) |
-| 10,000 rows | 10,000 DB calls | 200 calls at chunk=50 |
-| `@Transactional` required | Yes (or auto-commit per row) | Yes |
-| JPA dirty checking | N/A | N/A |
+|                           | Loop (`update()` per row)    | `batchUpdate()`       |
+|---------------------------|------------------------------|-----------------------|
+| Round-trips               | N                            | ceil(N / chunkSize)   |
+| 10,000 rows               | 10,000 DB calls              | 200 calls at chunk=50 |
+| `@Transactional` required | Yes (or auto-commit per row) | Yes                   |
+| JPA dirty checking        | N/A                          | N/A                   |
 
 Also configure Hibernate batch settings in `application.yml` for `saveAll()` / `persist()` batching:
 ```yaml

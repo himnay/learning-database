@@ -30,10 +30,10 @@ A module of the [learning-database](../README.md) project demonstrating **SQL/PG
 
 PostgreSQL 19 adds two SQL constructs:
 
-| Construct | Purpose |
-|---|---|
-| `CREATE PROPERTY GRAPH` | Defines a graph **as metadata** on top of existing tables |
-| `GRAPH_TABLE (...)` | Queries that graph with Cypher-like `MATCH` patterns inside plain SQL |
+| Construct               | Purpose                                                               |
+|-------------------------|-----------------------------------------------------------------------|
+| `CREATE PROPERTY GRAPH` | Defines a graph **as metadata** on top of existing tables             |
+| `GRAPH_TABLE (...)`     | Queries that graph with Cypher-like `MATCH` patterns inside plain SQL |
 
 Key design principles:
 
@@ -44,9 +44,9 @@ Key design principles:
 
 Two graphs are built in this module:
 
-| Graph | Migrations | Shape |
-|---|---|---|
-| `social` | `V1`, `V2` | Homogeneous: `person` vertices, `knows` edges — "friends of friends" |
+| Graph    | Migrations | Shape                                                                                                                   |
+|----------|------------|-------------------------------------------------------------------------------------------------------------------------|
+| `social` | `V1`, `V2` | Homogeneous: `person` vertices, `knows` edges — "friends of friends"                                                    |
 | `myshop` | `V3`, `V4` | Heterogeneous: `customer` / `"order"` / `product` / `employee` vertices; `has_placed` / `contains` / `related_to` edges |
 
 All objects live in the dedicated **`graph` schema** of `learningdb`, so this module never collides with `database-core` (which owns `public`).
@@ -223,11 +223,11 @@ ORDER BY a, c, via;
 <a id="7-edge-directions"></a>
 ## 7. ↔️ Edge Directions
 
-| Pattern | Meaning |
-|---|---|
+| Pattern               | Meaning                                                  |
+|-----------------------|----------------------------------------------------------|
 | `(a)-[IS knows]->(b)` | Follow edge in declared direction (source → destination) |
-| `(a)<-[IS knows]-(b)` | Follow edge backwards (who points *at* `a`) |
-| `(a)-[IS knows]-(b)` | Undirected — match the edge either way |
+| `(a)<-[IS knows]-(b)` | Follow edge backwards (who points *at* `a`)              |
+| `(a)-[IS knows]-(b)`  | Undirected — match the edge either way                   |
 
 See `SocialGraphService.whoIsKnownBy()` and `.connections()` for both variants.
 
@@ -364,17 +364,17 @@ GROUP BY p.name;
 <a id="12-rest-endpoints"></a>
 ## 12. 🌐 REST Endpoints
 
-| Endpoint | Demonstrates |
-|---|---|
-| `GET /api/graph/social/persons` | Simplest vertex-only `MATCH` |
-| `GET /api/graph/social/knows` | Single hop + edge property |
-| `GET /api/graph/social/friends-of-friends?name=Alice` | Two hops, in-pattern & in-graph `WHERE` |
-| `GET /api/graph/social/known-by?name=Alice` | Reversed arrow `<-` |
-| `GET /api/graph/social/connections?name=Alice` | Undirected edge `-` |
-| `GET /api/graph/social/reachable?name=Alice&maxDepth=4` | Recursive-CTE fallback for variable depth |
-| `GET /api/graph/social/explain` | Query plan — graph rewritten to joins |
-| `GET /api/graph/shop/customer-orders` | Heterogeneous hop, quoted label `"order"` |
-| `GET /api/graph/shop/order-contents` | Three vertex types in one path |
-| `GET /api/graph/shop/persons` | Multi-label match across two tables |
-| `GET /api/graph/shop/recommendations?product=Wireless%20Headphones&minWeight=0.5` | Weighted self-edge, edge-property filter |
-| `GET /api/graph/shop/top-customers` | `GRAPH_TABLE` inside CTE + aggregation |
+| Endpoint                                                                          | Demonstrates                              |
+|-----------------------------------------------------------------------------------|-------------------------------------------|
+| `GET /api/graph/social/persons`                                                   | Simplest vertex-only `MATCH`              |
+| `GET /api/graph/social/knows`                                                     | Single hop + edge property                |
+| `GET /api/graph/social/friends-of-friends?name=Alice`                             | Two hops, in-pattern & in-graph `WHERE`   |
+| `GET /api/graph/social/known-by?name=Alice`                                       | Reversed arrow `<-`                       |
+| `GET /api/graph/social/connections?name=Alice`                                    | Undirected edge `-`                       |
+| `GET /api/graph/social/reachable?name=Alice&maxDepth=4`                           | Recursive-CTE fallback for variable depth |
+| `GET /api/graph/social/explain`                                                   | Query plan — graph rewritten to joins     |
+| `GET /api/graph/shop/customer-orders`                                             | Heterogeneous hop, quoted label `"order"` |
+| `GET /api/graph/shop/order-contents`                                              | Three vertex types in one path            |
+| `GET /api/graph/shop/persons`                                                     | Multi-label match across two tables       |
+| `GET /api/graph/shop/recommendations?product=Wireless%20Headphones&minWeight=0.5` | Weighted self-edge, edge-property filter  |
+| `GET /api/graph/shop/top-customers`                                               | `GRAPH_TABLE` inside CTE + aggregation    |
