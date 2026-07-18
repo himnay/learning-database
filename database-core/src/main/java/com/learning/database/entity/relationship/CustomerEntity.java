@@ -40,11 +40,13 @@ public class CustomerEntity {
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<OrderEntity> orders = new ArrayList<>();
 
+    /** Adds order. */
     public void addOrder(OrderEntity order) {
         orders.add(order);
         order.setCustomer(this);
     }
 
+    /** Removes order. */
     public void removeOrder(OrderEntity order) {
         orders.remove(order);
         order.setCustomer(null);

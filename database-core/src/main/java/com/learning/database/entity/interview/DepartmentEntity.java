@@ -63,11 +63,13 @@ public class DepartmentEntity {
     @JsonManagedReference("dept-employee")   // serialized normally; breaks the circular JSON reference
     private List<EmployeeEntity> employees = new ArrayList<>();
 
+    /** Adds employee. */
     public void addEmployee(EmployeeEntity employee) {
         employees.add(employee);
         employee.setDepartment(this);
     }
 
+    /** Removes employee. */
     public void removeEmployee(EmployeeEntity employee) {
         employees.remove(employee);
         employee.setDepartment(null);

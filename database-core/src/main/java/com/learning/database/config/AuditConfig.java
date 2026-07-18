@@ -16,6 +16,7 @@ import java.util.Optional;
 @EnableJpaAuditing(auditorAwareRef = "auditorAware")
 public class AuditConfig {
 
+    /** Defines the auditor aware bean. */
     @Bean
     public AuditorAware<String> auditorAware() {
         // Replace with SecurityContextHolder.getContext().getAuthentication().getName()

@@ -70,6 +70,7 @@ public class JdbcDemoService {
     // ── RowCallbackHandler ────────────────────────────────────────────────────
     // Use when: streaming large result sets without holding data in memory.
 
+    /** Prints high earners. */
     public void printHighEarners(double minSalary) {
         String sql = "SELECT first_name, last_name, salary FROM employees WHERE salary > ? ORDER BY salary DESC";
         RowCallbackHandler handler = rs -> System.out.printf("%-12s %-12s  %.2f%n",
@@ -82,6 +83,7 @@ public class JdbcDemoService {
     // ── NamedParameterJdbcTemplate ─────────────────────────────────────────
     // Use when: many parameters — named :params are much clearer than positional ?
 
+    /** Finds by dept and min salary. */
     public List<EmployeeRow> findByDeptAndMinSalary(int deptId, double minSalary) {
         String sql = """
                 SELECT emp_id, first_name, last_name, salary
@@ -98,6 +100,7 @@ public class JdbcDemoService {
         ));
     }
 
+    /** Updates email by id. */
     public int updateEmailById(int empId, String newEmail) {
         String sql = "UPDATE employees SET email = :email WHERE emp_id = :id";
         MapSqlParameterSource params = new MapSqlParameterSource()
@@ -112,6 +115,7 @@ public class JdbcDemoService {
 
     public record NewEmployee(String firstName, String lastName, double salary, int deptId) {}
 
+    /** Returns the batch insert employees. */
     @Transactional
     public int[][] batchInsertEmployees(List<NewEmployee> employees) {
         String sql = "INSERT INTO employees (first_name, last_name, salary, dept_id) VALUES (?, ?, ?, ?)";
@@ -128,6 +132,7 @@ public class JdbcDemoService {
 
     // ── batchUpdate — bulk UPDATE via NamedParameterJdbcTemplate ─────────────
 
+    /** Returns the batch update salaries. */
     @Transactional
     public int[] batchUpdateSalaries(Map<Integer, Double> empIdToNewSalary) {
         String sql = "UPDATE employees SET salary = :salary WHERE emp_id = :empId";
@@ -143,6 +148,7 @@ public class JdbcDemoService {
 
     // ── batchUpdate via SqlParameterSourceUtils (entity list → batch) ─────────
 
+    /** Returns the batch update from beans. */
     @Transactional
     public int[] batchUpdateFromBeans(List<EmployeeRow> rows) {
         String sql = "UPDATE employees SET salary = :salary WHERE emp_id = :id";

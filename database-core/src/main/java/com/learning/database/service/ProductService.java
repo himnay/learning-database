@@ -29,6 +29,7 @@ public class ProductService {
 
     // ── Soft Delete (@SQLDelete + @Filter) ───────────────────────────────────
 
+    /** Handles soft delete. */
     @Transactional
     public void softDelete(Long id) {
         // @SQLDelete on ProductEntity intercepts this:
@@ -36,6 +37,7 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
+    /** Finds active products. */
     @Transactional(readOnly = true)
     public List<ProductEntity> findActiveProducts() {
         Session session = entityManager.unwrap(Session.class);
@@ -45,6 +47,7 @@ public class ProductService {
         return products;
     }
 
+    /** Finds deleted products. */
     @Transactional(readOnly = true)
     public List<ProductEntity> findDeletedProducts() {
         Session session = entityManager.unwrap(Session.class);
@@ -56,6 +59,7 @@ public class ProductService {
 
     // ── JPA Specification (dynamic search) ───────────────────────────────────
 
+    /** Searches products. */
     @Transactional(readOnly = true)
     public List<ProductEntity> searchProducts(String category, BigDecimal minPrice, BigDecimal maxPrice, String keyword) {
         Specification<ProductEntity> spec = ProductSpecification.isNotDeleted()
@@ -67,6 +71,7 @@ public class ProductService {
 
     // ── Query By Example (QBE) ────────────────────────────────────────────────
 
+    /** Finds employees by example. */
     @Transactional(readOnly = true)
     public List<EmployeeEntity> findEmployeesByExample(String firstName) {
         EmployeeEntity probe = new EmployeeEntity();
@@ -138,17 +143,20 @@ public class ProductService {
 
     // ── @Modifying bulk operations ─────────────────────────────────────────────
 
+    /** Returns the give raise by department. */
     @Transactional
     public int giveRaiseByDepartment(Integer deptId, double percentage) {
         BigDecimal multiplier = BigDecimal.valueOf(1 + percentage / 100);
         return employeeRepository.updateSalaryByDepartment(deptId, multiplier);
     }
 
+    /** Returns the increase price by category. */
     @Transactional
     public int increasePriceByCategory(String category, double factor) {
         return productRepository.adjustPriceByCategory(category, BigDecimal.valueOf(factor));
     }
 
+    /** Returns the soft delete category. */
     @Transactional
     public int softDeleteCategory(String category) {
         return productRepository.softDeleteByCategory(category);
@@ -156,6 +164,7 @@ public class ProductService {
 
     // ── Priority / @Convert demo ─────────────────────────────────────────────
 
+    /** Finds high priority products. */
     @Transactional(readOnly = true)
     public List<ProductEntity> findHighPriorityProducts() {
         // PriorityConverter (autoApply=true) converts Priority.HIGH → "high" in the SQL

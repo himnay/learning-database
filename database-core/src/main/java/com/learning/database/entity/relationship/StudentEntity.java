@@ -45,11 +45,13 @@ public class StudentEntity {
     @JsonIgnoreProperties("students")  // when serializing, skip courses[].students to break the loop
     private List<CourseEntity> courses = new ArrayList<>();
 
+    /** Handles enroll. */
     public void enroll(CourseEntity course) {
         courses.add(course);
         course.getStudents().add(this);
     }
 
+    /** Handles drop. */
     public void drop(CourseEntity course) {
         courses.remove(course);
         course.getStudents().remove(this);

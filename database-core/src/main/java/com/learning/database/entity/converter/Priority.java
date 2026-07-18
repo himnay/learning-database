@@ -21,6 +21,7 @@ public enum Priority {
         return dbValue;
     }
 
+    /** Returns the from db value. */
     public static Priority fromDbValue(String dbValue) {
         for (Priority p : values()) {
             if (p.dbValue.equalsIgnoreCase(dbValue)) return p;

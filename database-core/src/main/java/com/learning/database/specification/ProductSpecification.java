@@ -22,12 +22,14 @@ import java.math.BigDecimal;
  */
 public class ProductSpecification {
 
+    /** Returns whether category. */
     public static Specification<ProductEntity> hasCategory(String category) {
         return (root, query, cb) ->
             category == null ? cb.conjunction()
                              : cb.equal(root.get("category"), category);
     }
 
+    /** Returns the price between. */
     public static Specification<ProductEntity> priceBetween(BigDecimal min, BigDecimal max) {
         return (root, query, cb) -> {
             if (min == null && max == null) return cb.conjunction();
@@ -37,6 +39,7 @@ public class ProductSpecification {
         };
     }
 
+    /** Returns the name contains. */
     public static Specification<ProductEntity> nameContains(String keyword) {
         return (root, query, cb) ->
             keyword == null ? cb.conjunction()

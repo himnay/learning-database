@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuditLogService {
 
+    /** Logs. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void log(String message) {
         log.info("[AUDIT] {}", message);

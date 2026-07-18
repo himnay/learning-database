@@ -15,6 +15,7 @@ import java.math.BigDecimal;
  */
 public record EmployeeSummaryDTO(String firstName, String lastName, BigDecimal salary) {
 
+    /** Returns the full name. */
     public String fullName() {
         return firstName + " " + lastName;
     }
