@@ -4,6 +4,13 @@
 
 A multi-module **Spring Boot + PostgreSQL 19** learning project. One shared database (`learningdb`, started via Docker Compose), one module per topic — each module owns its own schema, Flyway migrations, and README.
 
+```mermaid
+flowchart LR
+    core["database-core :8080<br/>JPA reference + SQL problems"] -->|"schema: public"| db[("PostgreSQL 19<br/>learningdb — Docker")]
+    graphm["database-graph :8081<br/>SQL/PGQ property graphs"] -->|"schema: graph"| db
+    fw["Flyway<br/>per-module migrations"] -.->|"on startup"| db
+```
+
 ## Table of Contents
 
 1. 📦 [Modules](#1-modules)
