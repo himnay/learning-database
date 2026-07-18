@@ -21,9 +21,9 @@ import java.util.List;
  * This is different from CascadeType.REMOVE which deletes ALL orders when Customer is deleted.
  */
 @Entity
-@Table(name = "jpa_customer")
 @Getter
 @Setter
+@Table(name = "jpa_customer")
 public class CustomerEntity {
 
     @Id
@@ -36,8 +36,8 @@ public class CustomerEntity {
     @Column(unique = true)
     private String email;
 
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference("customer-order")
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<OrderEntity> orders = new ArrayList<>();
 
     public void addOrder(OrderEntity order) {

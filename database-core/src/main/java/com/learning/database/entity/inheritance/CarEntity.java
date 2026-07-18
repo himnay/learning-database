@@ -5,9 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@DiscriminatorValue("Car")
 @Getter
 @Setter
+@DiscriminatorValue("Car")
 public class CarEntity extends VehicleEntity {
 
     @Column(name = "num_doors")

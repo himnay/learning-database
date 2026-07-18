@@ -93,13 +93,13 @@ public interface EmployeeRepository
      * clearAutomatically = true: clears the first-level cache after the bulk operation so
      * subsequent findById calls see the updated data, not stale cached values.
      */
-    @Modifying(clearAutomatically = true)
     @Transactional
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE EmployeeEntity e SET e.salary = e.salary * :multiplier WHERE e.department.deptId = :deptId")
     int updateSalaryByDepartment(@Param("deptId") Integer deptId, @Param("multiplier") BigDecimal multiplier);
 
-    @Modifying(clearAutomatically = true)
     @Transactional
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE EmployeeEntity e SET e.email = :email WHERE e.empId = :id")
     int updateEmail(@Param("id") Integer id, @Param("email") String email);
 

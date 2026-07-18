@@ -34,9 +34,9 @@ import java.math.BigDecimal;
     name = "deletedProductFilter",
     parameters = @ParamDef(name = "isDeleted", type = Boolean.class)
 )
-@Filter(name = "deletedProductFilter", condition = "deleted = :isDeleted")
 @Getter
 @Setter
+@Filter(name = "deletedProductFilter", condition = "deleted = :isDeleted")
 public class ProductEntity extends AuditableBase {
 
     @Id

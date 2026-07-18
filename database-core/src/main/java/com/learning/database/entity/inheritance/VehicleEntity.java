@@ -12,11 +12,11 @@ import lombok.Setter;
  * Cons:  Columns specific to subclasses are nullable; cannot add NOT NULL constraints.
  */
 @Entity
+@Getter
+@Setter
 @Table(name = "vehicle")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "dtype", discriminatorType = DiscriminatorType.STRING)
-@Getter
-@Setter
 public abstract class VehicleEntity {
 
     @Id

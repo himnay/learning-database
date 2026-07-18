@@ -24,11 +24,11 @@ import org.hibernate.annotations.SQLRestriction;
  *   You sometimes need to query deleted rows too (e.g. admin views that show all).
  */
 @Entity
+@Getter
+@Setter
 @Table(name = "stock_item")
 @SQLDelete(sql = "UPDATE stock_item SET deleted = true WHERE id = ?")
 @SQLRestriction("deleted = false")   // appended to ALL queries on this entity automatically
-@Getter
-@Setter
 public class StockItemEntity {
 
     @Id

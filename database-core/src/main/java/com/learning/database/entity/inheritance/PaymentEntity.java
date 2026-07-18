@@ -15,11 +15,11 @@ import java.time.LocalDate;
  * Cons:  Every query requires a JOIN; slightly slower than SINGLE_TABLE.
  */
 @Entity
-@Table(name = "payment")
-@Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "dtype")
 @Getter
 @Setter
+@Table(name = "payment")
+@DiscriminatorColumn(name = "dtype")
+@Inheritance(strategy = InheritanceType.JOINED)
 public abstract class PaymentEntity {
 
     @Id

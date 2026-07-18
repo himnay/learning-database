@@ -9,11 +9,11 @@ import lombok.Setter;
  * Hibernate joins `payment` + `credit_card_payment` on the shared PK.
  */
 @Entity
-@Table(name = "credit_card_payment")
-@DiscriminatorValue("CreditCard")
-@PrimaryKeyJoinColumn(name = "id")
 @Getter
 @Setter
+@DiscriminatorValue("CreditCard")
+@PrimaryKeyJoinColumn(name = "id")
+@Table(name = "credit_card_payment")
 public class CreditCardPaymentEntity extends PaymentEntity {
 
     @Column(name = "card_number", nullable = false)

@@ -11,9 +11,9 @@ import lombok.Setter;
  * mappedBy = "address" is added to make it bidirectional.
  */
 @Entity
-@Table(name = "jpa_address")
 @Getter
 @Setter
+@Table(name = "jpa_address")
 public class AddressEntity {
 
     @Id

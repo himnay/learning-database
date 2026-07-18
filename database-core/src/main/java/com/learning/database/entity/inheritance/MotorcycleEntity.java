@@ -5,9 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@DiscriminatorValue("Motorcycle")
 @Getter
 @Setter
+@DiscriminatorValue("Motorcycle")
 public class MotorcycleEntity extends VehicleEntity {
 
     @Column(name = "engine_capacity_cc")

@@ -18,10 +18,10 @@ import java.time.LocalDateTime;
  * @Version enables optimistic locking: Hibernate increments it on each UPDATE and
  * throws OptimisticLockException if two transactions try to update the same row.
  */
-@MappedSuperclass
-@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
+@MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
 public abstract class AuditableBase {
 
     @CreatedBy

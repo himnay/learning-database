@@ -5,11 +5,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "bank_transfer_payment")
-@DiscriminatorValue("BankTransfer")
-@PrimaryKeyJoinColumn(name = "id")
 @Getter
 @Setter
+@PrimaryKeyJoinColumn(name = "id")
+@DiscriminatorValue("BankTransfer")
+@Table(name = "bank_transfer_payment")
 public class BankTransferPaymentEntity extends PaymentEntity {
 
     @Column(name = "bank_name", nullable = false)

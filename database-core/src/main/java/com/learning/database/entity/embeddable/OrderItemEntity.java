@@ -14,9 +14,9 @@ import java.math.BigDecimal;
  * @EmbeddedId is preferred: the key is a first-class object you can pass around.
  */
 @Entity
-@Table(name = "jpa_order_item")
 @Getter
 @Setter
+@Table(name = "jpa_order_item")
 public class OrderItemEntity {
 
     @EmbeddedId

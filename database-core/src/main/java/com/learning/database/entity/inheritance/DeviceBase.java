@@ -13,9 +13,9 @@ import lombok.Setter;
  * Cons:  Cannot query polymorphically across Computer and MobilePhone.
  *        Cannot define a FK relationship to DeviceBase.
  */
-@MappedSuperclass
 @Getter
 @Setter
+@MappedSuperclass
 public abstract class DeviceBase {
 
     @Id

@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/graph")
 @RequiredArgsConstructor
+@RequestMapping("/api/graph")
 public class GraphController {
 
     private final SocialGraphService social;

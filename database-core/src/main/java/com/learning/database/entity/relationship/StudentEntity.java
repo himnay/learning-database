@@ -21,9 +21,9 @@ import java.util.List;
  *   which is too aggressive for ManyToMany.
  */
 @Entity
-@Table(name = "jpa_student")
 @Getter
 @Setter
+@Table(name = "jpa_student")
 public class StudentEntity {
 
     @Id

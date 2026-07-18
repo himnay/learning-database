@@ -20,9 +20,9 @@ import java.math.BigDecimal;
  *   This is more flexible: the customer IS serialized but without its orders collection.
  */
 @Entity
-@Table(name = "jpa_order")
 @Getter
 @Setter
+@Table(name = "jpa_order")
 public class OrderEntity {
 
     @Id
@@ -36,8 +36,8 @@ public class OrderEntity {
     private BigDecimal amount;
 
     // Owning side — FK column `customer_id` is in this table
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id")
+    @ManyToOne(fetch = FetchType.LAZY)
     @JsonBackReference("customer-order")
     private CustomerEntity customer;
 }

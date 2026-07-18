@@ -5,9 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "dog")
 @Getter
 @Setter
+@Table(name = "dog")
 public class DogEntity extends AnimalEntity {
 
     private String breed;

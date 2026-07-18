@@ -39,16 +39,16 @@ public interface ProductRepository
      * clearAutomatically = true clears the first-level cache post-update,
      * ensuring subsequent loads return fresh data rather than stale cached values.
      */
-    @Modifying(clearAutomatically = true)
     @Transactional
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE ProductEntity p SET p.price = p.price * :factor WHERE p.category = :category AND p.deleted = false")
     int adjustPriceByCategory(@Param("category") String category, @Param("factor") BigDecimal factor);
 
     /**
      * Bulk soft-delete by category using JPQL (alternative to calling @SQLDelete per entity).
      */
-    @Modifying(clearAutomatically = true)
     @Transactional
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE ProductEntity p SET p.deleted = true WHERE p.category = :category")
     int softDeleteByCategory(@Param("category") String category);
 

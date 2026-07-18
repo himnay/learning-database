@@ -5,9 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "cat")
 @Getter
 @Setter
+@Table(name = "cat")
 public class CatEntity extends AnimalEntity {
 
     private String color;

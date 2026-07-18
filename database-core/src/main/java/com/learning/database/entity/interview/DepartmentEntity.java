@@ -23,14 +23,14 @@ import java.util.List;
  *   @JsonManagedReference — prevents infinite JSON recursion on the "one" side
  */
 @Entity
-@Table(name = "departments")
 @Getter
 @Setter
+@Table(name = "departments")
 public class DepartmentEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "dept_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer deptId;
 
     @Column(name = "dept_name", nullable = false)
@@ -57,8 +57,8 @@ public class DepartmentEntity {
      * @Fetch(FetchMode.SUBSELECT) — loads all at once with a single subquery:
      *   SELECT * FROM employees WHERE dept_id IN (SELECT dept_id FROM departments WHERE ...)
      */
-    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @BatchSize(size = 20)
+    @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     // @Fetch(FetchMode.SUBSELECT)   // ← uncomment to try the SUBSELECT approach instead
     @JsonManagedReference("dept-employee")   // serialized normally; breaks the circular JSON reference
     private List<EmployeeEntity> employees = new ArrayList<>();

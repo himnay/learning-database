@@ -34,8 +34,8 @@ import java.math.BigDecimal;
 public class EmployeeEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "emp_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer empId;
 
     @Column(name = "first_name", nullable = false)
@@ -76,7 +76,7 @@ public class EmployeeEntity {
      *   Department → employees[] → each employee.department → Department → ...
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dept_id", referencedColumnName = "dept_id")
     @JsonBackReference("dept-employee")
+    @JoinColumn(name = "dept_id", referencedColumnName = "dept_id")
     private DepartmentEntity department;
 }

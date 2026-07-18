@@ -10,9 +10,9 @@ import lombok.Setter;
  * CascadeType.ALL: saving/deleting a User also saves/deletes its Address.
  */
 @Entity
-@Table(name = "jpa_user")
 @Getter
 @Setter
+@Table(name = "jpa_user")
 public class UserEntity {
 
     @Id
@@ -26,7 +26,7 @@ public class UserEntity {
     private String email;
 
     // Owning side: @JoinColumn names the FK column in jpa_user table
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id", unique = true)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private AddressEntity address;
 }

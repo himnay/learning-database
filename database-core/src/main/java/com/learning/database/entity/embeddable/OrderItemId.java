@@ -17,12 +17,12 @@ import java.io.Serializable;
  *   2. Must override equals() and hashCode() — Lombok @EqualsAndHashCode handles this.
  *   3. Must have a no-arg constructor.
  */
-@Embeddable
 @Getter
 @Setter
+@Embeddable
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode
+@AllArgsConstructor
 public class OrderItemId implements Serializable {
 
     @Column(name = "order_id")

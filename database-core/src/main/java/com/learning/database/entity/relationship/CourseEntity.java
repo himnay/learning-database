@@ -17,9 +17,9 @@ import java.util.List;
  *   `courses` list is excluded — preventing Course→Student→Courses→... recursion.
  */
 @Entity
-@Table(name = "jpa_course")
 @Getter
 @Setter
+@Table(name = "jpa_course")
 public class CourseEntity {
 
     @Id

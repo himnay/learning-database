@@ -5,9 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "computer")
 @Getter
 @Setter
+@Table(name = "computer")
 public class ComputerEntity extends DeviceBase {
 
     private String os;
