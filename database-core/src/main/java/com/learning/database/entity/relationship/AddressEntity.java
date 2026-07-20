@@ -1,5 +1,6 @@
 package com.learning.database.entity.relationship;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,7 +29,10 @@ public class AddressEntity {
 
     private String zip;
 
-    // Bidirectional back-reference — inverse side uses mappedBy
+    // Bidirectional back-reference — inverse side uses mappedBy.
+    // @JsonIgnore breaks the User → Address → User serialization cycle
+    // (and avoids LazyInitializationException on the lazy proxy).
+    @JsonIgnore
     @OneToOne(mappedBy = "address")
     private UserEntity user;
 }

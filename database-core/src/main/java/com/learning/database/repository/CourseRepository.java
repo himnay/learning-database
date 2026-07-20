@@ -19,7 +19,9 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
     @Query("SELECT c FROM CourseEntity c LEFT JOIN FETCH c.students WHERE c.id = :id")
     Optional<CourseEntity> findByIdWithStudents(Long id);
 
-    // Count enrolled students per course
-    @Query("SELECT c.title, SIZE(c.students) FROM CourseEntity c GROUP BY c.title ORDER BY SIZE(c.students) DESC")
+    // Count enrolled students per course.
+    // NOTE: SIZE(c.students) in the SELECT renders as a correlated subquery on c.id,
+    // which Postgres rejects under GROUP BY c.title — use an explicit JOIN + COUNT instead.
+    @Query("SELECT c.title, COUNT(s) FROM CourseEntity c LEFT JOIN c.students s GROUP BY c.title ORDER BY COUNT(s) DESC")
     List<Object[]> findCourseEnrollmentCounts();
 }

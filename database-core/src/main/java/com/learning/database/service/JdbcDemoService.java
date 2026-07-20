@@ -70,14 +70,19 @@ public class JdbcDemoService {
     // ── RowCallbackHandler ────────────────────────────────────────────────────
     // Use when: streaming large result sets without holding data in memory.
 
-    /** Prints high earners. */
-    public void printHighEarners(double minSalary) {
+    /** Streams high earners to the log row-by-row; returns how many rows were processed. */
+    public int printHighEarners(double minSalary) {
         String sql = "SELECT first_name, last_name, salary FROM employees WHERE salary > ? ORDER BY salary DESC";
-        RowCallbackHandler handler = rs -> System.out.printf("%-12s %-12s  %.2f%n",
-                rs.getString("first_name"),
-                rs.getString("last_name"),
-                rs.getDouble("salary"));
+        int[] count = {0};
+        RowCallbackHandler handler = rs -> {
+            count[0]++;
+            System.out.printf("%-12s %-12s  %.2f%n",
+                    rs.getString("first_name"),
+                    rs.getString("last_name"),
+                    rs.getDouble("salary"));
+        };
         jdbcTemplate.query(sql, handler, minSalary);
+        return count[0];
     }
 
     // ── NamedParameterJdbcTemplate ─────────────────────────────────────────
@@ -143,6 +148,32 @@ public class JdbcDemoService {
                         .addValue("salary", entry.getValue()))
                 .toArray(SqlParameterSource[]::new);
 
+        return namedJdbc.batchUpdate(sql, batch);
+    }
+
+    // ── batchUpdate — bulk UPSERT (PostgreSQL ON CONFLICT) ───────────────────
+    // Bulk upsert: one batched statement per row, each atomically insert-or-update.
+    // Requires unique constraint on product.name (V11).
+
+    public record ProductUpsertRow(String name, double price, String category) {}
+
+    /** Bulk-upserts products; returns rows affected per statement. */
+    @Transactional
+    public int[] batchUpsertProducts(List<ProductUpsertRow> rows) {
+        String sql = """
+                INSERT INTO product (name, price, category, priority, deleted, version)
+                VALUES (:name, :price, :category, 'normal', false, 0)
+                ON CONFLICT (name) DO UPDATE SET
+                    price    = EXCLUDED.price,
+                    category = EXCLUDED.category,
+                    version  = product.version + 1
+                """;
+        SqlParameterSource[] batch = rows.stream()
+                .map(r -> new MapSqlParameterSource()
+                        .addValue("name", r.name())
+                        .addValue("price", r.price())
+                        .addValue("category", r.category()))
+                .toArray(SqlParameterSource[]::new);
         return namedJdbc.batchUpdate(sql, batch);
     }
 

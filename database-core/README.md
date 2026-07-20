@@ -58,12 +58,13 @@ All tables are created and seeded automatically by Flyway on startup.
    - 5.31 JdbcTemplate.batchUpdate()
 6. 🗄️ [Database Schema Overview](#6-database-schema-overview)
 7. 🗄️ [Connect to the Database](#7-connect-to-the-database)
+8. 🌐 [REST API Endpoints](#8-rest-api-endpoints)
 
 ## What database-core does
 
 `database-core` is a runnable Spring Boot application (port **8080**) that owns the `public` schema of the shared `learningdb` PostgreSQL 19 database. It bundles four things into one module:
 
-1. **Schema as code** — 10 Flyway migrations (`V1`–`V10`) create and seed every table, index, stored procedure, and sequence the module uses. No manual setup, fully reproducible.
+1. **Schema as code** — 13 Flyway migrations (`V1`–`V13`) create and seed every table, index, stored procedure, and sequence the module uses. No manual setup, fully reproducible.
 2. **SQL interview practice** — 10 classic query problems (window functions, pivot, Nth-highest salary, HAVING vs WHERE, LAG/LEAD, NTILE …) with runnable data in `interview-queries.sql`.
 3. **A complete Spring Data JPA reference** — 31 concepts, each backed by a real entity/repository/service class: relationships, cascades, all four inheritance strategies, projections, Specifications, QBE, composite keys, auditing, soft delete, locking, `@Transactional` propagation/isolation, keyset pagination, converters, `@Formula`, batch fetching, and JDBC (`JdbcTemplate`, `NamedParameterJdbcTemplate`, `batchUpdate`).
 4. **Concurrency & infrastructure demos** — HikariCP pool tuning, optimistic/pessimistic locking, and REQUIRES_NEW audit trails that survive rollbacks.
@@ -286,7 +287,8 @@ flowchart LR
     V3 --> V4["V4 create_scores"] --> V5["V5 create_deliveries"] --> V6["V6 jpa_relationship_tables"]
     V6 --> V7["V7 jpa_inheritance_tables"] --> V8["V8 jpa_other_tables"] --> V9["V9 stored_procedures"]
     V9 --> V10["V10 additional_columns"]
-    V10 --> DONE(["Schema ready —\nSpring context finishes,\napp accepts traffic"])
+    V10 --> V11["V11 note_table_and_product_unique"] --> V12["V12 fix_sequences_and_priority_case"] --> V13["V13 dept_stats_procedure"]
+    V13 --> DONE(["Schema ready —\nSpring context finishes,\napp accepts traffic"])
 
     style CHECK fill:#333,stroke:#999,color:#fff
 ```
@@ -305,6 +307,9 @@ Each script only ever runs once per database (tracked by version number in `flyw
 | V8      | `jpa_other_tables.sql`        | `jpa_order_item` (composite PK), `product` (soft delete + audit)                                                             |
 | V9      | `stored_procedures.sql`       | 3 PostgreSQL functions: `get_total_employees`, `get_employee_count_by_dept`, `get_dept_salary_stats`                         |
 | V10     | `additional_columns.sql`      | `ALTER TABLE product ADD COLUMN priority VARCHAR(20)` + `CREATE TABLE stock_item` (id, name, stock, deleted) + seed data     |
+| V11     | `note_table_and_product_unique.sql` | `note` table (Hibernate `@SoftDelete` demo) + `UNIQUE (name)` constraint on `product` (upsert `ON CONFLICT` target)    |
+| V12     | `fix_sequences_and_priority_case.sql` | `setval()` re-sync for `departments`/`employees` serials (seed data used explicit ids) + lowercase `product.priority` to match `PriorityConverter` |
+| V13     | `dept_stats_procedure.sql`    | `proc_dept_salary_stats` — a true `PROCEDURE` (IN + 3 OUT params) because Hibernate 6+ `CALL`s procedures, not functions     |
 
 ---
 
@@ -2767,6 +2772,105 @@ Password: postgres
 
 ---
 
+<a id="8-rest-api-endpoints"></a>
+## 8. 🌐 REST API Endpoints
+
+Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercised with `curl` while watching the SQL log (`show-sql=true`). One controller per feature area under `controller/`.
+
+### `/api/employees` — queries, projections, paging, locking, procedures
+
+| Endpoint | Demonstrates |
+|---|---|
+| `GET /api/employees?page=&size=` | `Page` (data + COUNT query) with ad-hoc `@EntityGraph` |
+| `GET /api/employees/by-dept/{deptId}` | derived query on nested property (`findByDepartment_DeptId`) |
+| `GET /api/employees/top-earner`, `/top5?minSalary=` | `findFirstByOrderBy…`, `findTop5By…` |
+| `GET /api/employees/salary-range?min=&max=` | JPQL `@Query` with named params |
+| `GET /api/employees/by-dept/{id}/with-department` | `JOIN FETCH` (no N+1) |
+| `GET /api/employees/search?name=` | `@EntityGraph("Employee.withDepartment")` on a derived query |
+| `GET /api/employees/by-last-name/{lastName}` | native SQL query |
+| `GET /api/employees/projections/names` | interface projection + SpEL `fullName` |
+| `GET /api/employees/projections/summaries` | DTO projection (JPQL constructor expression) |
+| `GET /api/employees/projections/tuples` | `Tuple` projection |
+| `GET /api/employees/slice?firstName=&page=&size=` | `Slice` (no COUNT query) |
+| `GET /api/employees/scroll[?lastSalary=&lastEmpId=]` | keyset/cursor scrolling (`Window` + `ScrollPosition`) |
+| `GET /api/employees/qbe?firstName=` | Query By Example (`Example` + `ExampleMatcher`) |
+| `PUT /api/employees/raise?deptId=&percentage=` | `@Modifying` bulk UPDATE |
+| `PUT /api/employees/{id}/email?email=` | `@Modifying` single-column UPDATE |
+| `DELETE /api/employees/{id}/hard` | native hard DELETE |
+| `PUT /api/employees/{id}/salary-locked?salary=` | `@Lock(PESSIMISTIC_WRITE)` — `SELECT … FOR UPDATE` |
+| `GET /api/employees/{id}/shared-lock` | `@Lock(PESSIMISTIC_READ)` — `SELECT … FOR SHARE` |
+| `GET /api/employees/by-email?email=` | `@Lock(OPTIMISTIC)` |
+| `GET /api/employees/procedures/total-count` | `@Procedure` + `@NamedStoredProcedureQuery` (function-call hint) |
+| `GET /api/employees/procedures/dept-stats/{deptId}` | `StoredProcedureQuery` — IN + 3 OUT params (V13 procedure) |
+| `GET /api/employees/window-functions` | native ROW_NUMBER / RANK / DENSE_RANK / NTILE / LAG / LEAD |
+| `GET /api/employees/exists?email=` | `existsBy…` |
+
+### `/api/products` — Specification, soft delete, upsert, auditing
+
+| Endpoint | Demonstrates |
+|---|---|
+| `POST /api/products` | `save()` — response shows auditing fields + `@Version` |
+| `GET /api/products/search?category=&minPrice=&maxPrice=&keyword=` | composed `Specification` (all params optional) |
+| `DELETE /api/products/{id}` | `@SQLDelete` soft delete |
+| `GET /api/products/active` / `/deleted` | `@Filter` toggled per session |
+| `GET /api/products/page`, `/slice?category=`, `/scroll/offset`, `/scroll/keyset` | Page vs Slice vs offset/keyset `Window` |
+| `GET /api/products/high-priority` | `@Convert` / `AttributeConverter` (enum ↔ VARCHAR) |
+| `PUT /api/products/price-adjust?category=&factor=` | `@Modifying` bulk UPDATE |
+| `DELETE /api/products/category/{c}` / `…/purge` | bulk soft delete (JPQL) / native purge |
+| `POST /api/products/upsert?name=&price=&category=` | PostgreSQL `ON CONFLICT` upsert (run twice) |
+
+### `/api/soft-delete` — the always-on soft-delete styles
+
+| Endpoint | Demonstrates |
+|---|---|
+| `GET|POST|DELETE /api/soft-delete/stock-items…` | `@SQLDelete` + `@SQLRestriction` (Hibernate 6.3+) |
+| `PUT /api/soft-delete/stock-items/{id}/add-stock?qty=` | `@Modifying` bulk UPDATE |
+| `GET|POST|DELETE /api/soft-delete/notes…` | `@SoftDelete` (Hibernate 6.4+) — zero boilerplate |
+
+### `/api/departments`, `/api/relationships` — associations
+
+| Endpoint | Demonstrates |
+|---|---|
+| `GET /api/departments`, `/{deptId}` | bidirectional `@OneToMany` with `JOIN FETCH` |
+| `GET /api/relationships/users` | `@OneToOne` with `JOIN FETCH` |
+| `GET /api/relationships/customers/{id}` | `@OneToMany` + `@JsonManagedReference`/`@JsonBackReference` |
+| `POST /api/relationships/customers` | `CascadeType.ALL` — one save persists customer + orders |
+| `DELETE /api/relationships/customers/{cid}/orders/{oid}` | `orphanRemoval` |
+| `GET /api/relationships/students/{id}`, `/courses/{id}` | `@ManyToMany` both directions, `@JsonIgnoreProperties` |
+| `POST /api/relationships/students/{sid}/courses/{cid}` | join-table INSERT via owning side |
+| `GET /api/relationships/courses/enrollments` | aggregate over join table (`LEFT JOIN` + `COUNT`) |
+| `GET /api/relationships/order-items/{orderId}/{code}` | `@EmbeddedId` composite-key lookup |
+
+### `/api/inheritance` — the four mapping strategies
+
+| Endpoint | Strategy |
+|---|---|
+| `GET /api/inheritance/vehicles…` | `SINGLE_TABLE` (discriminator; subclass query via `/cars?brand=&doors=`) |
+| `GET /api/inheritance/payments…` | `JOINED` (parent+child JOIN; `/above?amount=`) |
+| `GET /api/inheritance/animals…` | `TABLE_PER_CLASS` (UNION ALL; `/dogs?breed=`) |
+| `GET /api/inheritance/computers…` | `MappedSuperclass` (no polymorphic query) |
+
+### `/api/jdbc` — Spring JDBC callbacks & batching
+
+| Endpoint | Demonstrates |
+|---|---|
+| `GET /api/jdbc/employees` | `RowMapper` |
+| `GET /api/jdbc/employees/by-department` | `ResultSetExtractor` |
+| `GET /api/jdbc/employees/high-earners?minSalary=` | `RowCallbackHandler` (streams to log) |
+| `GET /api/jdbc/employees/search?deptId=&minSalary=` | `NamedParameterJdbcTemplate` |
+| `POST /api/jdbc/employees/batch` (JSON array) | `batchUpdate` bulk INSERT |
+| `PUT /api/jdbc/employees/salaries` (`{"1":75000}`) | `batchUpdate` bulk UPDATE |
+| `POST /api/jdbc/products/batch-upsert` (JSON array) | batched `ON CONFLICT` bulk upsert |
+
+### `/api/transactions` — @Transactional attributes
+
+| Endpoint | Demonstrates |
+|---|---|
+| `GET /api/transactions/propagation/{required\|requires-new\|mandatory\|supports\|not-supported\|never\|nested}` | propagation (mandatory without a tx returns the thrown exception — that's the lesson) |
+| `GET /api/transactions/isolation/{read-uncommitted\|read-committed\|repeatable-read\|serializable}` | isolation levels |
+| `POST /api/transactions/no-rollback/{empId}` | `noRollbackFor` — exception thrown, tx still commits |
+| `GET /api/transactions/timeout`, `/read-only` | `timeout`, `readOnly` |
+| `POST /api/transactions/raise-with-audit?deptId=&multiplier=` | `REQUIRES_NEW` audit log commits independently |
 
 ---
 

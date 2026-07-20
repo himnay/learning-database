@@ -63,4 +63,26 @@ public interface ProductRepository
 
     // Exists query — more efficient than findBy + isEmpty()
     boolean existsByNameAndDeletedFalse(String name);
+
+    // ── Upsert (PostgreSQL ON CONFLICT) ──────────────────────────────────────
+
+    /**
+     * Native upsert — INSERT, or UPDATE if the row already exists.
+     * Requires a unique constraint on the conflict target (product_name_unique, V11).
+     * JPA has no portable upsert; save() is select-then-insert/update (2 round trips,
+     * race-prone). ON CONFLICT is atomic and a single statement.
+     */
+    @Modifying
+    @Transactional
+    @Query(nativeQuery = true, value = """
+            INSERT INTO product (name, price, category, priority, deleted, version)
+            VALUES (:name, :price, :category, 'normal', false, 0)
+            ON CONFLICT (name) DO UPDATE SET
+                price    = EXCLUDED.price,
+                category = EXCLUDED.category,
+                version  = product.version + 1
+            """)
+    int upsertProduct(@Param("name") String name,
+                      @Param("price") BigDecimal price,
+                      @Param("category") String category);
 }

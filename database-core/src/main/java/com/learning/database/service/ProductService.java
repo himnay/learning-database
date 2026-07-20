@@ -175,7 +175,10 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public String getDeptSalaryStats(Integer deptId) {
-        StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_dept_salary_stats");
+        // Targets the true PROCEDURE from V13 — Hibernate 6+ emits `CALL ...`, which
+        // Postgres only accepts for procedures (the V9 FUNCTION variant is invoked
+        // via native `SELECT get_dept_salary_stats(...)` instead).
+        StoredProcedureQuery query = entityManager.createStoredProcedureQuery("proc_dept_salary_stats");
         query.registerStoredProcedureParameter("p_dept_id", Integer.class,    ParameterMode.IN);
         query.registerStoredProcedureParameter("p_min_sal", BigDecimal.class,  ParameterMode.OUT);
         query.registerStoredProcedureParameter("p_max_sal", BigDecimal.class,  ParameterMode.OUT);

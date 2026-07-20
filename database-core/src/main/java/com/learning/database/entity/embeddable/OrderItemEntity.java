@@ -1,5 +1,6 @@
 package com.learning.database.entity.embeddable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,7 +30,9 @@ public class OrderItemEntity {
     private BigDecimal price;
 
     // FK to jpa_order — insertable/updatable=false because order_id is already
-    // managed as part of the @EmbeddedId above (avoids duplicate column mapping)
+    // managed as part of the @EmbeddedId above (avoids duplicate column mapping).
+    // @JsonIgnore: lazy proxy must not be serialized (open-in-view=false).
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", insertable = false, updatable = false)
     private com.learning.database.entity.relationship.OrderEntity order;
