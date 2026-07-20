@@ -17,7 +17,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public abstract class AnimalEntity {
+public abstract class AnimalEntityInheritanceType {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "animal_seq_gen")

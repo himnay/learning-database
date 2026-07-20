@@ -1,6 +1,6 @@
 package com.learning.database.repository;
 
-import com.learning.database.entity.inheritance.ComputerEntity;
+import com.learning.database.entity.inheritance.entites.ComputerEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

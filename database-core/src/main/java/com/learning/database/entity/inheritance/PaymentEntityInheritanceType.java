@@ -20,7 +20,7 @@ import java.time.LocalDate;
 @Table(name = "payment")
 @DiscriminatorColumn(name = "dtype")
 @Inheritance(strategy = InheritanceType.JOINED)
-public abstract class PaymentEntity {
+public abstract class PaymentEntityInheritanceType {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

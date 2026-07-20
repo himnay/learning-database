@@ -1,5 +1,6 @@
-package com.learning.database.entity.inheritance;
+package com.learning.database.entity.inheritance.entites;
 
+import com.learning.database.entity.inheritance.PaymentEntityInheritanceType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +15,7 @@ import lombok.Setter;
 @DiscriminatorValue("CreditCard")
 @PrimaryKeyJoinColumn(name = "id")
 @Table(name = "credit_card_payment")
-public class CreditCardPaymentEntity extends PaymentEntity {
+public class CreditCardPaymentEntity extends PaymentEntityInheritanceType {
 
     @Column(name = "card_number", nullable = false)
     private String cardNumber;

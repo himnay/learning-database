@@ -1,5 +1,6 @@
-package com.learning.database.entity.inheritance;
+package com.learning.database.entity.inheritance.entites;
 
+import com.learning.database.entity.inheritance.VehicleEntityInheritanceType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @DiscriminatorValue("Motorcycle")
-public class MotorcycleEntity extends VehicleEntity {
+public class MotorcycleEntity extends VehicleEntityInheritanceType {
 
     @Column(name = "engine_capacity_cc")
     private Integer engineCapacityCc;

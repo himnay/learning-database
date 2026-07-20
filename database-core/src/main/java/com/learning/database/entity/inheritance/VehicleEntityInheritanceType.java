@@ -17,7 +17,7 @@ import lombok.Setter;
 @Table(name = "vehicle")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "dtype", discriminatorType = DiscriminatorType.STRING)
-public abstract class VehicleEntity {
+public abstract class VehicleEntityInheritanceType {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

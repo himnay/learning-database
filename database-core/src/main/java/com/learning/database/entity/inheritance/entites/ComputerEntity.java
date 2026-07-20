@@ -1,4 +1,4 @@
-package com.learning.database.entity.inheritance;
+package com.learning.database.entity.inheritance.entites;
 
 import jakarta.persistence.*;
 import lombok.Getter;
