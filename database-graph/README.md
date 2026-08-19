@@ -1,4 +1,4 @@
-# <span style="color:hsl(102,68%,32%)">database-graph — SQL/PGQ Property Graphs in PostgreSQL 19</span>
+# <span style="color:hsl(102,80%,58%)">database-graph — SQL/PGQ Property Graphs in PostgreSQL 19</span>
 
 <img src="../image/postgres19-graph-banner.png" alt="PostgreSQL 19 Native Graph Queries" width="700"/>
 
@@ -8,7 +8,7 @@ A module of the [learning-database](../README.md) project demonstrating **SQL/PG
 
 ---
 
-## <span style="color:hsl(128,68%,32%)">Table of Contents</span>
+## <span style="color:hsl(240,80%,58%)">Table of Contents</span>
 
 1. 🕸️ [What is SQL/PGQ?](#1-what-is-sqlpgq)
 2. 🚀 [Quick Start](#2-quick-start)
@@ -26,7 +26,7 @@ A module of the [learning-database](../README.md) project demonstrating **SQL/PG
 ---
 
 <a id="1-what-is-sqlpgq"></a>
-## <span style="color:hsl(153,68%,36%)">1. 🕸️ What is SQL/PGQ?</span>
+## <span style="color:hsl(17,80%,58%)">1. 🕸️ What is SQL/PGQ?</span>
 
 PostgreSQL 19 adds two SQL constructs:
 
@@ -52,7 +52,7 @@ Two graphs are built in this module:
 All objects live in the dedicated **`graph` schema** of `learningdb`, so this module never collides with `database-core` (which owns `public`).
 
 <a id="2-quick-start"></a>
-## <span style="color:hsl(179,68%,36%)">2. 🚀 Quick Start</span>
+## <span style="color:hsl(155,80%,58%)">2. 🚀 Quick Start</span>
 
 ```bash
 # 1. Start PostgreSQL 19 (from the repository root)
@@ -66,7 +66,7 @@ curl "http://localhost:8081/api/graph/social/friends-of-friends?name=Alice"
 ```
 
 <a id="3-module-structure"></a>
-## <span style="color:hsl(205,68%,44%)">3. 🏗️ Module Structure</span>
+## <span style="color:hsl(292,80%,58%)">3. 🏗️ Module Structure</span>
 
 ```
 database-graph/
@@ -90,7 +90,7 @@ database-graph/
 Queries run through `JdbcTemplate` — Hibernate cannot parse `GRAPH_TABLE`, and it doesn't need to: the SQL is rewritten server-side.
 
 <a id="4-defining-a-property-graph"></a>
-## <span style="color:hsl(231,68%,44%)">4. 🗄️ Defining a Property Graph</span>
+## <span style="color:hsl(70,80%,50%)">4. 🗄️ Defining a Property Graph</span>
 
 Take the smallest possible social network — a `person` table and a `knows` table mapping who knows whom:
 
@@ -156,7 +156,7 @@ Notes:
 - Reserved words used as labels must be quoted (`LABEL "order"`).
 
 <a id="5-your-first-graph-query"></a>
-## <span style="color:hsl(256,68%,44%)">5. 🔍 Your First Graph Query</span>
+## <span style="color:hsl(207,80%,58%)">5. 🔍 Your First Graph Query</span>
 
 ```sql
 SELECT name
@@ -185,7 +185,7 @@ Logically equivalent to `SELECT name FROM person ORDER BY name`. Gotchas:
 - A `WHERE` clause may appear **inside** an element pattern — `(p IS person WHERE p.city = 'Berlin')` — or after the whole `MATCH`.
 
 <a id="6-single-hop-and-multi-hop-traversals"></a>
-## <span style="color:hsl(282,68%,44%)">6. 🔗 Single-Hop and Multi-Hop Traversals</span>
+## <span style="color:hsl(345,80%,58%)">6. 🔗 Single-Hop and Multi-Hop Traversals</span>
 
 **Who knows whom** — `(a)-[IS knows]->(b)` is an edge pattern; the arrow follows the edge in its declared direction (SOURCE → DESTINATION):
 
@@ -221,7 +221,7 @@ ORDER BY a, c, via;
 ```
 
 <a id="7-edge-directions"></a>
-## <span style="color:hsl(308,68%,44%)">7. ↔️ Edge Directions</span>
+## <span style="color:hsl(122,80%,58%)">7. ↔️ Edge Directions</span>
 
 | Pattern               | Meaning                                                  |
 |-----------------------|----------------------------------------------------------|
@@ -232,7 +232,7 @@ ORDER BY a, c, via;
 See `SocialGraphService.whoIsKnownBy()` and `.connections()` for both variants.
 
 <a id="8-heterogeneous-graphs--multiple-labels"></a>
-## <span style="color:hsl(333,68%,44%)">8. 🧩 Heterogeneous Graphs & Multiple Labels</span>
+## <span style="color:hsl(260,80%,58%)">8. 🧩 Heterogeneous Graphs & Multiple Labels</span>
 
 Real graphs mix vertex types. The `myshop` graph ([V4](src/main/resources/db/migration/V4__shop_property_graph.sql)) exercises the full DDL feature set:
 
@@ -295,7 +295,7 @@ WHERE rec_name <> 'Wireless Headphones';
 ```
 
 <a id="9-mixing-graph_table-with-classic-sql"></a>
-## <span style="color:hsl(359,68%,44%)">9. 🧮 Mixing GRAPH_TABLE with Classic SQL</span>
+## <span style="color:hsl(37,80%,58%)">9. 🧮 Mixing GRAPH_TABLE with Classic SQL</span>
 
 `GRAPH_TABLE` yields an ordinary row set, so CTEs, joins and aggregation compose naturally:
 
@@ -316,7 +316,7 @@ ORDER BY total_spend DESC;
 ```
 
 <a id="10-under-the-hood--explain"></a>
-## <span style="color:hsl(25,68%,44%)">10. ⚙️ Under the Hood — EXPLAIN</span>
+## <span style="color:hsl(175,80%,58%)">10. ⚙️ Under the Hood — EXPLAIN</span>
 
 `EXPLAIN` on the friends-of-friends query shows **no graph executor nodes** — only ordinary hash joins over `person` and `knows`:
 
@@ -338,7 +338,7 @@ ORDER BY total_spend DESC;
 PostgreSQL simply rewrites the graph pattern into joins behind the scenes. You get more compact, intention-revealing syntax — and the `CREATE PROPERTY GRAPH` statement doubles as documentation of your data model. Try it live: `GET /api/graph/social/explain`.
 
 <a id="11-limitations-in-postgresql-19"></a>
-## <span style="color:hsl(51,68%,32%)">11. ⚠️ Limitations in PostgreSQL 19</span>
+## <span style="color:hsl(312,80%,58%)">11. ⚠️ Limitations in PostgreSQL 19</span>
 
 - **Fixed-depth patterns only.** Variable-length quantifiers (`+`, `*`, `{2,5}`), shortest-path and flood-fill are **not** yet supported — planned for future releases. Open-ended traversals still need a recursive CTE (see `SocialGraphService.reachable()`):
 
@@ -362,7 +362,7 @@ GROUP BY p.name;
 - For billion-edge workloads and advanced graph algorithms (PageRank, community detection), dedicated graph databases remain the better tool.
 
 <a id="12-rest-endpoints"></a>
-## <span style="color:hsl(76,68%,32%)">12. 🌐 REST Endpoints</span>
+## <span style="color:hsl(90,80%,58%)">12. 🌐 REST Endpoints</span>
 
 | Endpoint                                                                          | Demonstrates                              |
 |-----------------------------------------------------------------------------------|-------------------------------------------|

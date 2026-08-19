@@ -1,4 +1,4 @@
-# <span style="color:hsl(12,68%,44%)">Learning Database</span>
+# <span style="color:hsl(12,80%,58%)">Learning Database</span>
 
 <img src="image/spring-logo.png" alt="Spring" width="70"/> <img src="image/postgresql-logo.png" alt="PostgreSQL" width="70"/>
 
@@ -6,7 +6,7 @@ A multi-module **Spring Boot + PostgreSQL 19** learning project. One shared data
 
 ![Architecture diagram](image/architecture-diagram.png)
 
-## <span style="color:hsl(72,68%,32%)">Table of Contents</span>
+## <span style="color:hsl(150,80%,58%)">Table of Contents</span>
 
 1. 📦 [Modules](#1-modules)
 2. 🚀 [Quick Start](#2-quick-start)
@@ -16,7 +16,7 @@ A multi-module **Spring Boot + PostgreSQL 19** learning project. One shared data
 ---
 
 <a id="1-modules"></a>
-## <span style="color:hsl(132,68%,32%)">1. 📦 Modules</span>
+## <span style="color:hsl(287,80%,58%)">1. 📦 Modules</span>
 
 | Module                                     | Port | Schema   | What it covers                                                                                                                                                                                                                                                        |
 |--------------------------------------------|------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -24,7 +24,7 @@ A multi-module **Spring Boot + PostgreSQL 19** learning project. One shared data
 | [database-graph](database-graph/README.md) | 8081 | `graph`  | PostgreSQL 19 **SQL/PGQ** property graphs: `CREATE PROPERTY GRAPH`, `GRAPH_TABLE` / `MATCH` pattern queries, heterogeneous graphs, multiple labels, edge properties, and recursive-CTE fallbacks for variable-length paths                                            |
 
 <a id="2-quick-start"></a>
-## <span style="color:hsl(192,68%,36%)">2. 🚀 Quick Start</span>
+## <span style="color:hsl(65,80%,50%)">2. 🚀 Quick Start</span>
 
 ```bash
 # 1. Start PostgreSQL 19 (shared by all modules)
@@ -39,7 +39,7 @@ mvn -pl database-graph spring-boot:run   # http://localhost:8081
 ```
 
 <a id="3-database-connection"></a>
-## <span style="color:hsl(252,68%,44%)">3. 🔌 Database Connection</span>
+## <span style="color:hsl(202,80%,58%)">3. 🔌 Database Connection</span>
 
 | Property | Value        |
 |----------|--------------|
@@ -50,7 +50,7 @@ mvn -pl database-graph spring-boot:run   # http://localhost:8081
 | Password | `postgres`   |
 
 <a id="4-repository-layout"></a>
-## <span style="color:hsl(312,68%,44%)">4. 🏗️ Repository Layout</span>
+## <span style="color:hsl(340,80%,58%)">4. 🏗️ Repository Layout</span>
 
 ```
 learning-database/
