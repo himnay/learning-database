@@ -1,11 +1,11 @@
-# database-core — Spring Boot + PostgreSQL
+# <span style="color:hsl(69,68%,32%)">database-core — Spring Boot + PostgreSQL</span>
 
 <img src="../image/spring-logo.png" alt="Spring" width="70"/> <img src="../image/postgresql-logo.png" alt="PostgreSQL" width="70"/>
 
 The core module of the [learning-database](../README.md) multi-module project, covering **SQL interview questions** and every major **Spring Data JPA concept**.  
 All tables are created and seeded automatically by Flyway on startup.
 
-## Table of Contents
+## <span style="color:hsl(72,68%,32%)">Table of Contents</span>
 
 - 📌 [What database-core does](#what-database-core-does)
 - 💡 [Why this project exists](#why-this-project-exists)
@@ -60,7 +60,7 @@ All tables are created and seeded automatically by Flyway on startup.
 7. 🗄️ [Connect to the Database](#7-connect-to-the-database)
 8. 🌐 [REST API Endpoints](#8-rest-api-endpoints)
 
-## What database-core does
+## <span style="color:hsl(75,68%,32%)">What database-core does</span>
 
 `database-core` is a runnable Spring Boot application (port **8080**) that owns the `public` schema of the shared `learningdb` PostgreSQL 19 database. It bundles four things into one module:
 
@@ -71,7 +71,7 @@ All tables are created and seeded automatically by Flyway on startup.
 
 Its sibling module [`database-graph`](../database-graph/README.md) covers PostgreSQL 19's SQL/PGQ property-graph queries and lives in its own `graph` schema of the same database.
 
-## Why this project exists
+## <span style="color:hsl(78,68%,32%)">Why this project exists</span>
 
 Most tutorials teach JPA or SQL in isolation, with toy examples that never touch the messy edges you actually run into in production: what happens when two transactions update the same row at the same time, why a perfectly reasonable-looking loop over a `@OneToMany` collection quietly turns into hundreds of SQL statements, or why an `INSERT` inside a rolled-back transaction can still leave an audit trail behind. This repository is built the other way around: every concept below is backed by a real, runnable table, entity, repository, or service class in `src/main/java`, seeded by a real Flyway migration in `src/main/resources/db/migration`. Nothing in this document describes a feature that isn't present in the code — every code block is either copied verbatim from a source file (with the exact file and line range noted) or is the literal SQL Hibernate/Flyway generates for that code.
 
@@ -81,7 +81,7 @@ The project sits at the intersection of three layers that most JPA discussions b
 2. **The ORM mapping layer** — how Hibernate/JPA annotations translate Java object graphs into that relational model, and the leaks in that abstraction (N+1 queries, locking, inheritance, auditing).
 3. **The transactional/concurrency layer** — what guarantees the database gives you when multiple requests touch the same data concurrently, and how Spring's `@Transactional` exposes (and sometimes hides) those guarantees.
 
-### Architecture at a glance
+### <span style="color:hsl(82,68%,32%)">Architecture at a glance</span>
 
 ```mermaid
 flowchart TB
@@ -119,9 +119,9 @@ At startup, Flyway inspects `db/migration`, compares each script's checksum agai
 
 
 <a id="1-quick-start"></a>
-## 1. 🚀 Quick Start
+## <span style="color:hsl(85,68%,32%)">1. 🚀 Quick Start</span>
 
-### Prerequisites
+### <span style="color:hsl(88,68%,32%)">Prerequisites</span>
 
 <ul>
 
@@ -131,7 +131,7 @@ At startup, Flyway inspects `db/migration`, compares each script's checksum agai
 
 </ul>
 
-### Steps
+### <span style="color:hsl(91,68%,32%)">Steps</span>
 
 ```bash
 # 1. Start PostgreSQL (from the repository root)
@@ -146,7 +146,7 @@ mvn -pl database-core spring-boot:run
 > Flyway runs **V1 → V10** migrations on startup, creating all tables and seeding all sample data.  
 > Open `interview-queries.sql` in any SQL client and run the queries against `learningdb`.
 
-### Database Connection Details
+### <span style="color:hsl(94,68%,32%)">Database Connection Details</span>
 
 | Property | Value        |
 |----------|--------------|
@@ -159,7 +159,7 @@ mvn -pl database-core spring-boot:run
 ---
 
 <a id="2-project-structure"></a>
-## 2. 🏗️ Project Structure
+## <span style="color:hsl(97,68%,32%)">2. 🏗️ Project Structure</span>
 
 ```
 learning-database/
@@ -264,7 +264,7 @@ learning-database/
 ---
 
 <a id="3-flyway-migrations"></a>
-## 3. 🗄️ Flyway Migrations
+## <span style="color:hsl(100,68%,32%)">3. 🗄️ Flyway Migrations</span>
 
 Flyway is a **schema-as-code / migration-based** tool: instead of a DBA hand-editing the schema (or an ORM's `ddl-auto=update` silently guessing at changes), every structural change to the database is captured as an immutable, version-numbered SQL script committed to source control alongside the application code. This matters for a few concrete reasons this repo actually exercises:
 
@@ -314,7 +314,7 @@ Each script only ever runs once per database (tracked by version number in `flyw
 ---
 
 <a id="4-sql-interview-query-problems"></a>
-## 4. 🗄️ SQL Interview Query Problems
+## <span style="color:hsl(103,68%,32%)">4. 🗄️ SQL Interview Query Problems</span>
 
 Connect to the database and run queries from `interview-queries.sql`, or paste them directly below.
 
@@ -322,7 +322,7 @@ Connect to the database and run queries from `interview-queries.sql`, or paste t
 
 ---
 
-### Q1 — Employee & Department Problem
+### <span style="color:hsl(107,68%,32%)">Q1 — Employee & Department Problem</span>
 
 **Tables involved:** `employees`, `departments`
 
@@ -355,7 +355,7 @@ GROUP BY d.dept_name;
 
 ---
 
-### Q2 — Find Departments with More Than X Employees
+### <span style="color:hsl(110,68%,32%)">Q2 — Find Departments with More Than X Employees</span>
 
 **Key concept:** SQL execution order is `FROM → WHERE → GROUP BY → HAVING → SELECT`.  
 `WHERE` runs **before** grouping, so it cannot filter on aggregate functions. Use `HAVING` instead.
@@ -393,7 +393,7 @@ HAVING COUNT(*) > 2;  -- ✅ Engineering (4) and Sales (3)
 
 ---
 
-### Q3 — ROW_NUMBER() vs RANK() vs DENSE_RANK()
+### <span style="color:hsl(113,68%,32%)">Q3 — ROW_NUMBER() vs RANK() vs DENSE_RANK()</span>
 
 **Table:** `emp_test` — intentionally has two rows with salary 4000 (B and C) to show tie behaviour.
 
@@ -441,7 +441,7 @@ D        |  3000  |    4    |  4  |     3      ← RANK skips 3; DENSE_RANK does
 
 ---
 
-### Q4 — Find the Nth Highest Salary
+### <span style="color:hsl(116,68%,32%)">Q4 — Find the Nth Highest Salary</span>
 
 **Wrong approach:** `MAX(salary) WHERE salary < MAX(salary)` only finds the 2nd highest and is brittle.
 
@@ -463,7 +463,7 @@ WHERE dense_rnk = 2;
 
 ---
 
-### Q5 — Nth Highest Salary with Index (Efficient)
+### <span style="color:hsl(119,68%,32%)">Q5 — Nth Highest Salary with Index (Efficient)</span>
 
 Oracle uses `ROWNUM`; PostgreSQL uses `LIMIT`. The index `idx_emp_test_salary_desc` created in V3 lets the database avoid a full sort.
 
@@ -486,7 +486,7 @@ FROM (
 
 ---
 
-### Q6 — Pivot Table (Rows → Columns)
+### <span style="color:hsl(122,68%,32%)">Q6 — Pivot Table (Rows → Columns)</span>
 
 Transform `(name, subject, score)` rows into `(name, math, science, english)` columns using conditional aggregation.
 
@@ -520,7 +520,7 @@ Rahul |  70  |   65    |   80
 
 ---
 
-### Q7 — Swap Two Columns Without a Temp Table
+### <span style="color:hsl(125,68%,32%)">Q7 — Swap Two Columns Without a Temp Table</span>
 
 PostgreSQL evaluates the entire right-hand side of `SET` before applying any assignments, so swapping in a single `UPDATE` is safe.
 
@@ -542,7 +542,7 @@ SET col_a = col_b,
 
 ---
 
-### Q8 — NTILE() Function
+### <span style="color:hsl(128,68%,32%)">Q8 — NTILE() Function</span>
 
 `NTILE(N)` divides the result set into N equal buckets and assigns each row a bucket number.  
 Common use: quartiles, percentiles, deciles.
@@ -561,7 +561,7 @@ ORDER BY salary DESC;
 
 ---
 
-### Q9 — LAG() and LEAD() Functions
+### <span style="color:hsl(132,68%,32%)">Q9 — LAG() and LEAD() Functions</span>
 
 `LAG(col, offset)` looks at the **previous** row; `LEAD(col, offset)` looks at the **next** row within the same window — without a self-join.
 
@@ -590,7 +590,7 @@ Bob        | 75000.00  | Alice         | 80000.00    | Henry         | 70000.00
 
 ---
 
-### Q10 — Find Restaurants with ≥ 4 Ratings and Never Rated Below 4
+### <span style="color:hsl(135,68%,32%)">Q10 — Find Restaurants with ≥ 4 Ratings and Never Rated Below 4</span>
 
 ```sql
 SELECT
@@ -617,11 +617,11 @@ Sushi Star  |       4       |     4       ← 4 ratings, all ≥ 4 ✅
 ---
 
 <a id="5-spring-data-jpa-concepts"></a>
-## 5. 🗄️ Spring Data JPA Concepts
+## <span style="color:hsl(138,68%,32%)">5. 🗄️ Spring Data JPA Concepts</span>
 
 ---
 
-### 5.1 Spring Data Overview
+### <span style="color:hsl(141,68%,32%)">5.1 Spring Data Overview</span>
 
 Spring Data is an umbrella project providing a consistent programming model across different data stores (JPA, MongoDB, Redis, Cassandra, etc.).
 
@@ -637,7 +637,7 @@ Spring Data is an umbrella project providing a consistent programming model acro
 
 ---
 
-### 5.2 JPA vs Hibernate
+### <span style="color:hsl(144,68%,32%)">5.2 JPA vs Hibernate</span>
 
 |                 | JPA                                 | Hibernate                 |
 |-----------------|-------------------------------------|---------------------------|
@@ -649,7 +649,7 @@ Spring Data is an umbrella project providing a consistent programming model acro
 
 ---
 
-### 5.3 CrudRepository vs JpaRepository
+### <span style="color:hsl(147,68%,32%)">5.3 CrudRepository vs JpaRepository</span>
 
 ```
 Repository
@@ -663,13 +663,13 @@ Repository
 
 ---
 
-### 5.4 Relationships & Associations
+### <span style="color:hsl(150,68%,36%)">5.4 Relationships & Associations</span>
 
 Every relationship has an **owning side** (holds the FK column, and is the side Hibernate actually issues `INSERT`/`UPDATE` statements for when the association changes) and an **inverse side** (declares `mappedBy` and is purely a read-time convenience — writing to it alone does nothing to the database). Getting this backwards is one of the most common JPA bugs: setting a value only on the inverse side of a relationship persists nothing, because Hibernate only looks at the owning side's FK field when deciding what SQL to generate.
 
 The underlying relational rule is simple and predates ORMs entirely: **a foreign key column always lives on the "many" (or the referencing) side of a relationship.** JPA's owning/inverse distinction is just a mapping of that relational fact onto two Java classes that both want to reference each other.
 
-#### @OneToOne — Bidirectional
+#### <span style="color:hsl(154,68%,36%)">@OneToOne — Bidirectional</span>
 
 ```
 jpa_user (id, name, email, address_id FK)  ←→  jpa_address (id, street, city, zip)
@@ -713,7 +713,7 @@ private AddressEntity address;
 private UserEntity user;
 ```
 
-#### @OneToMany / @ManyToOne — Bidirectional
+#### <span style="color:hsl(157,68%,36%)">@OneToMany / @ManyToOne — Bidirectional</span>
 
 ```
 jpa_customer (id, name, email)  ←→  jpa_order (id, product, amount, customer_id FK)
@@ -755,7 +755,7 @@ private List<OrderEntity> orders = new ArrayList<>();
 private CustomerEntity customer;
 ```
 
-#### @ManyToMany — Bidirectional
+#### <span style="color:hsl(160,68%,36%)">@ManyToMany — Bidirectional</span>
 
 ```
 jpa_student ←→ jpa_student_course (student_id, course_id) ←→ jpa_course
@@ -808,7 +808,7 @@ private List<StudentEntity> students;
 
 ---
 
-### 5.5 Cascade Types
+### <span style="color:hsl(163,68%,36%)">5.5 Cascade Types</span>
 
 Cascade propagates state transitions from parent to child.
 
@@ -827,7 +827,7 @@ Hibernate-specific extras: `REPLICATE`, `SAVE_UPDATE`, `LOCK`.
 
 ---
 
-### 5.6 Fetch Types & N+1 Problem
+### <span style="color:hsl(166,68%,36%)">5.6 Fetch Types & N+1 Problem</span>
 
 | FetchType | Behaviour                                                          | Default for                 |
 |-----------|--------------------------------------------------------------------|-----------------------------|
@@ -836,7 +836,7 @@ Hibernate-specific extras: `REPLICATE`, `SAVE_UPDATE`, `LOCK`.
 
 `LAZY` associations are backed by a runtime-generated proxy subclass (or a bytecode-instrumented field) — accessing `department.getEmployees()` for the first time is what triggers Hibernate to open a `Session` round-trip and populate the real collection. This is powerful (you only pay for what you use) and dangerous (the query happens implicitly, often deep inside a loop, far from where the collection was fetched) — which is exactly the shape of the N+1 problem below.
 
-#### The N+1 Problem
+#### <span style="color:hsl(169,68%,36%)">The N+1 Problem</span>
 
 ```sql
 -- 1 query to load all departments
@@ -872,7 +872,7 @@ sequenceDiagram
 
 This repo demonstrates four different fixes for the same underlying problem, each with different trade-offs — see the comparison table in §5.29 for how `JOIN FETCH`, `@EntityGraph`, `@BatchSize`, and `@Fetch(SUBSELECT)` stack up against each other.
 
-#### Solution: JOIN FETCH
+#### <span style="color:hsl(172,68%,36%)">Solution: JOIN FETCH</span>
 
 ```java
 // DepartmentRepository.java
@@ -885,7 +885,7 @@ List<DepartmentEntity> findAllWithEmployees();
 
 ---
 
-### 5.7 @JoinColumn vs @JoinTable
+### <span style="color:hsl(175,68%,36%)">5.7 @JoinColumn vs @JoinTable</span>
 
 | Annotation     | Used for                                                             |
 |----------------|----------------------------------------------------------------------|
@@ -913,7 +913,7 @@ List<DepartmentEntity> findAllWithEmployees();
 
 ---
 
-### 5.8 OrphanRemoval vs CascadeType.REMOVE
+### <span style="color:hsl(179,68%,36%)">5.8 OrphanRemoval vs CascadeType.REMOVE</span>
 
 |                | `CascadeType.REMOVE`                        | `orphanRemoval = true`                        |
 |----------------|---------------------------------------------|-----------------------------------------------|
@@ -935,7 +935,7 @@ repo.delete(customer);
 
 ---
 
-### 5.9 Inheritance Strategies
+### <span style="color:hsl(182,68%,36%)">5.9 Inheritance Strategies</span>
 
 Object-oriented inheritance and relational tables don't map onto each other naturally — a class hierarchy is a tree of "is-a" relationships, while a relational schema is a flat set of tables connected by foreign keys. JPA offers four different ways to bridge that gap, and this repo implements all four side by side specifically so their generated schemas and query behaviour can be compared directly rather than taken on faith.
 
@@ -949,7 +949,7 @@ flowchart TD
     Q2 -- "Rarely the right answer" --> TPC["TABLE_PER_CLASS\n(Animal → Dog/Cat)"]
 ```
 
-#### Strategy 1: @MappedSuperclass
+#### <span style="color:hsl(185,68%,36%)">Strategy 1: @MappedSuperclass</span>
 
 No table for the parent. Each concrete subclass gets its own independent table with all parent + child columns.
 
@@ -986,7 +986,7 @@ Notice `computer` and `mobile_phone` share no table, no FK, and no common column
 
 **File:** `DeviceBase.java` → `ComputerEntity.java`, `MobilePhoneEntity.java`
 
-#### Strategy 2: SINGLE_TABLE
+#### <span style="color:hsl(188,68%,36%)">Strategy 2: SINGLE_TABLE</span>
 
 One table for the entire hierarchy. A discriminator column identifies the subclass.
 
@@ -1026,7 +1026,7 @@ public abstract class VehicleEntity { ... }
 public class CarEntity extends VehicleEntity { Integer numDoors; }
 ```
 
-#### Strategy 3: JOINED
+#### <span style="color:hsl(191,68%,36%)">Strategy 3: JOINED</span>
 
 Parent table + a child table per subclass. Child PK is also a FK to the parent PK.
 
@@ -1078,7 +1078,7 @@ public abstract class PaymentEntity { ... }
 public class CreditCardPaymentEntity extends PaymentEntity { ... }
 ```
 
-#### Strategy 4: TABLE_PER_CLASS
+#### <span style="color:hsl(194,68%,36%)">Strategy 4: TABLE_PER_CLASS</span>
 
 Each concrete subclass has its own full table (parent columns repeated in each).
 
@@ -1124,7 +1124,7 @@ public abstract class AnimalEntity {
 
 **Why the shared `animal_seq` sequence matters:** if `dog` and `cat` each used their own auto-increment/identity column, both tables could independently produce a row with `id = 1`. Since a polymorphic `UNION ALL` query merges rows from both tables into one JPA result set, two entities with the same id would be indistinguishable to client code (and to Hibernate's first-level cache, which is keyed by entity type + id — a collision here is scoped to the concrete subclass, but a shared sequence keeps ids globally unique as a matter of hygiene across the whole hierarchy).
 
-#### Inheritance Strategy Comparison
+#### <span style="color:hsl(197,68%,36%)">Inheritance Strategy Comparison</span>
 
 | Strategy            | Polymorphic queries | NOT NULL on subclass cols | JOINs needed | Schema complexity |
 |---------------------|---------------------|---------------------------|--------------|-------------------|
@@ -1135,11 +1135,11 @@ public abstract class AnimalEntity {
 
 ---
 
-### 5.10 Projections
+### <span style="color:hsl(200,68%,44%)">5.10 Projections</span>
 
 Fetch only the columns you need instead of loading entire entities.
 
-#### Interface Projection (Spring Proxy)
+#### <span style="color:hsl(204,68%,44%)">Interface Projection (Spring Proxy)</span>
 
 Safest and most readable. Spring creates a dynamic proxy at runtime.
 
@@ -1158,7 +1158,7 @@ public interface EmployeeNameView {
 List<EmployeeNameView> findEmployeeNames();
 ```
 
-#### DTO / Record Projection (Constructor Expression)
+#### <span style="color:hsl(207,68%,44%)">DTO / Record Projection (Constructor Expression)</span>
 
 Best for serialization and cross-layer transfer.
 
@@ -1173,7 +1173,7 @@ public record EmployeeSummaryDTO(String firstName, String lastName, BigDecimal s
 List<EmployeeSummaryDTO> findEmployeeSummaries();
 ```
 
-#### Tuple Projection
+#### <span style="color:hsl(210,68%,44%)">Tuple Projection</span>
 
 Flexible but not type-safe. Requires string-based alias lookup and casting.
 
@@ -1190,7 +1190,7 @@ for (Tuple t : tuples) {
 
 **Drawback of Tuple:** No compile-time checking on alias names or types — a typo in `"firstName"` throws at runtime.
 
-#### Native Query Projection
+#### <span style="color:hsl(213,68%,44%)">Native Query Projection</span>
 
 ```java
 @Query(nativeQuery = true, value = "SELECT * FROM employees WHERE last_name = :lastName")
@@ -1199,7 +1199,7 @@ List<EmployeeEntity> findByLastName(@Param("lastName") String lastName);
 
 ---
 
-### 5.11 Dynamic Queries — JPA Specification
+### <span style="color:hsl(216,68%,44%)">5.11 Dynamic Queries — JPA Specification</span>
 
 Used when query conditions are not known at compile time (search/filter APIs).
 
@@ -1253,7 +1253,7 @@ public interface ProductRepository
 
 ---
 
-### 5.12 Dynamic Queries — Query By Example (QBE)
+### <span style="color:hsl(219,68%,44%)">5.12 Dynamic Queries — Query By Example (QBE)</span>
 
 Simpler than Specification when your entity already has the fields you want to filter on. You fill in a partially-populated entity (Probe) and Spring builds the WHERE clause from non-null fields.
 
@@ -1293,7 +1293,7 @@ List<EmployeeEntity> results = employeeRepository.findAll(Example.of(probe, matc
 
 ---
 
-### 5.13 @Embeddable & @EmbeddedId (Composite Keys)
+### <span style="color:hsl(222,68%,44%)">5.13 @Embeddable & @EmbeddedId (Composite Keys)</span>
 
 When a primary key spans multiple columns, use `@Embeddable` + `@EmbeddedId`.
 
@@ -1338,7 +1338,7 @@ Optional<OrderItemEntity> item = repo.findById(key);
 
 ---
 
-### 5.14 Spring Data Auditing
+### <span style="color:hsl(226,68%,44%)">5.14 Spring Data Auditing</span>
 
 Automatically fills `createdBy`, `createdDate`, `lastModifiedBy`, `lastModifiedDate` on save/update, plus `@Version` for optimistic locking.
 
@@ -1379,7 +1379,7 @@ Hibernate increments `version` on every UPDATE. If two transactions read the sam
 
 ---
 
-### 5.15 Soft Delete
+### <span style="color:hsl(229,68%,44%)">5.15 Soft Delete</span>
 
 Soft delete keeps rows in the database but marks them invisible with a `deleted = true` flag.
 
@@ -1415,9 +1415,9 @@ public List<ProductEntity> findActiveProducts() {
 
 ---
 
-### 5.16 Paging, Sorting & Slicing
+### <span style="color:hsl(232,68%,44%)">5.16 Paging, Sorting & Slicing</span>
 
-#### Page vs Slice
+#### <span style="color:hsl(235,68%,44%)">Page vs Slice</span>
 
 |                   | `Page<T>`                 | `Slice<T>`                         |
 |-------------------|---------------------------|------------------------------------|
@@ -1459,11 +1459,11 @@ while (slice.hasNext()) {
 
 ---
 
-### 5.17 Stored Procedures & DB Functions
+### <span style="color:hsl(238,68%,44%)">5.17 Stored Procedures & DB Functions</span>
 
 Three ways to call stored procedures/functions in Spring Data JPA.
 
-#### Method 1: @Query (nativeQuery) — Simplest for PostgreSQL functions
+#### <span style="color:hsl(241,68%,44%)">Method 1: @Query (nativeQuery) — Simplest for PostgreSQL functions</span>
 
 ```java
 // Works for any PostgreSQL function that returns a value
@@ -1474,7 +1474,7 @@ Integer getTotalEmployeeCountNative();
 Integer getCountByDept(@Param("deptId") Integer deptId);
 ```
 
-#### Method 2: @NamedStoredProcedureQuery + @Procedure (JPA 2.1)
+#### <span style="color:hsl(244,68%,44%)">Method 2: @NamedStoredProcedureQuery + @Procedure (JPA 2.1)</span>
 
 ```java
 // On the entity class:
@@ -1490,7 +1490,7 @@ Integer getCountByDept(@Param("deptId") Integer deptId);
 Integer getTotalEmployeeCount();
 ```
 
-#### Method 3: StoredProcedureQuery via EntityManager — For IN/OUT params
+#### <span style="color:hsl(247,68%,44%)">Method 3: StoredProcedureQuery via EntityManager — For IN/OUT params</span>
 
 ```java
 // service/ProductService.java
@@ -1518,13 +1518,13 @@ BigDecimal avg = (BigDecimal) query.getOutputParameterValue("p_avg_sal");
 
 ---
 
-### 5.18 JDBC — RowMapper, ResultSetExtractor, RowCallbackHandler
+### <span style="color:hsl(251,68%,44%)">5.18 JDBC — RowMapper, ResultSetExtractor, RowCallbackHandler</span>
 
 Three JDBC callback interfaces for different use cases.
 
 **File:** `service/JdbcDemoService.java`
 
-#### RowMapper — map each row to an object
+#### <span style="color:hsl(254,68%,44%)">RowMapper — map each row to an object</span>
 
 ```java
 // Returns List<EmployeeRow>; Spring iterates the ResultSet for you
@@ -1539,7 +1539,7 @@ List<EmployeeRow> employees = jdbcTemplate.query("SELECT * FROM employees", mapp
 
 **Use when:** Simple row-to-object mapping, get back a `List<T>`.
 
-#### ResultSetExtractor — control the entire ResultSet
+#### <span style="color:hsl(257,68%,44%)">ResultSetExtractor — control the entire ResultSet</span>
 
 ```java
 // Returns a single complex object built from all rows
@@ -1557,7 +1557,7 @@ Map<String, List<String>> deptMap = jdbcTemplate.query(sql, extractor);
 
 **Use when:** Building a complex object from multiple related rows (e.g., dept → list of employees).
 
-#### RowCallbackHandler — process rows with no return value
+#### <span style="color:hsl(260,68%,44%)">RowCallbackHandler — process rows with no return value</span>
 
 ```java
 // No return value — processes each row in-place (streaming / reporting)
@@ -1569,7 +1569,7 @@ jdbcTemplate.query("SELECT * FROM employees WHERE salary > ?", handler, 70000.0)
 
 **Use when:** Processing very large result sets without loading everything into memory (streaming export, reporting).
 
-#### Summary
+#### <span style="color:hsl(263,68%,44%)">Summary</span>
 
 | Callback                | Returns        | When to use                         |
 |-------------------------|----------------|-------------------------------------|
@@ -1579,7 +1579,7 @@ jdbcTemplate.query("SELECT * FROM employees WHERE salary > ?", handler, 70000.0)
 
 ---
 
-### 5.19 NamedParameterJdbcTemplate
+### <span style="color:hsl(266,68%,44%)">5.19 NamedParameterJdbcTemplate</span>
 
 Replaces positional `?` with named `:paramName` placeholders. More readable when queries have many parameters.
 
@@ -1602,7 +1602,7 @@ List<EmployeeRow> result = namedJdbc.query(sql, params, (rs, rowNum) ->
 
 ---
 
-### 5.20 Connection Pool (HikariCP)
+### <span style="color:hsl(269,68%,44%)">5.20 Connection Pool (HikariCP)</span>
 
 Spring Boot uses **HikariCP** by default — "fast, simple, reliable, lightweight." A connection pool exists because opening a fresh TCP connection to PostgreSQL is expensive relative to running a query on it: PostgreSQL forks a new backend process per connection, negotiates SSL/auth, and initializes session state — work that would otherwise be repeated on every single request if the driver opened and closed a raw socket each time. A pool amortizes that cost by keeping a set of already-authenticated connections open and handing them out and back like a lending library.
 
@@ -1674,7 +1674,7 @@ For a 4-core machine with 1 disk: start with `pool_size = 9`, tune from there.
 
 </ul>
 
-### 5.21 @EntityGraph — Eager-Loading Graphs
+### <span style="color:hsl(272,68%,44%)">5.21 @EntityGraph — Eager-Loading Graphs</span>
 
 **Problem it solves:** `JOIN FETCH` in JPQL eagerly loads an association, but it forces you to write a custom `@Query` — you lose the convenience of derived query method names. `@EntityGraph` decouples the fetch strategy from the query method, so you can write `findByFirstNameContaining(…)` and still get the join.
 
@@ -1723,7 +1723,7 @@ WHERE e.first_name LIKE ?
 
 ---
 
-### 5.22 @Lock — Pessimistic & Optimistic Locking
+### <span style="color:hsl(276,68%,44%)">5.22 @Lock — Pessimistic & Optimistic Locking</span>
 
 Concurrent transactions that both read then write the same row can produce **lost updates**: transaction A reads a row, transaction B reads the same row, A writes back its (now stale) change, B writes back its own stale change — silently overwriting A's update as if it never happened. Neither transaction saw an error; the data is simply wrong. Spring Data JPA exposes three locking modes via `@Lock` that each defend against this differently.
 
@@ -1743,7 +1743,7 @@ sequenceDiagram
     Note over DB: Final salary = 52000 —\nTx A's +1000 raise is silently lost
 ```
 
-#### Pessimistic Write — `SELECT FOR UPDATE`
+#### <span style="color:hsl(279,68%,44%)">Pessimistic Write — `SELECT FOR UPDATE`</span>
 
 ```java
 @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -1776,7 +1776,7 @@ sequenceDiagram
     Note over DB: Final salary = 53000 — both updates applied correctly, in order
 ```
 
-#### Pessimistic Read — `SELECT FOR SHARE`
+#### <span style="color:hsl(282,68%,44%)">Pessimistic Read — `SELECT FOR SHARE`</span>
 
 ```java
 @Lock(LockModeType.PESSIMISTIC_READ)
@@ -1791,7 +1791,7 @@ SELECT * FROM employees WHERE emp_id = ? FOR SHARE
 
 Multiple readers can hold a shared lock simultaneously. Writers (FOR UPDATE) are blocked until all shared locks are released. Use when you want to prevent writes while allowing concurrent reads.
 
-#### Optimistic — version-based conflict detection
+#### <span style="color:hsl(285,68%,44%)">Optimistic — version-based conflict detection</span>
 
 ```java
 @Lock(LockModeType.OPTIMISTIC)
@@ -1838,7 +1838,7 @@ Hibernate implements this by silently appending `AND version = ?` to every `UPDA
 
 ---
 
-### 5.23 @Modifying — Bulk UPDATE / DELETE
+### <span style="color:hsl(288,68%,44%)">5.23 @Modifying — Bulk UPDATE / DELETE</span>
 
 `@Modifying` marks a non-SELECT `@Query` (UPDATE, DELETE, INSERT via native SQL). Without it, Spring Data throws an exception because it expects a SELECT.
 
@@ -1888,11 +1888,11 @@ int purgeDeletedByCategory(@Param("category") String category);
 
 ---
 
-### 5.24 @Transactional — Propagation, Isolation, rollbackFor, timeout
+### <span style="color:hsl(291,68%,44%)">5.24 @Transactional — Propagation, Isolation, rollbackFor, timeout</span>
 
 Spring's `@Transactional` is more than "wrap this in a transaction." It controls seven distinct behaviors: propagation, isolation, rollback rules, timeout, and read-only hint.
 
-#### Propagation — what happens when a transactional method calls another
+#### <span style="color:hsl(294,68%,44%)">Propagation — what happens when a transactional method calls another</span>
 
 | Propagation            | Behaviour                                                                                              |
 |------------------------|--------------------------------------------------------------------------------------------------------|
@@ -1945,7 +1945,7 @@ sequenceDiagram
     Note over TxInner,TxOuter: Result: salary change is undone,<br/>but the audit log entry survives — it was committed independently
 ```
 
-#### Isolation — what concurrent transactions can see
+#### <span style="color:hsl(298,68%,44%)">Isolation — what concurrent transactions can see</span>
 
 | Isolation Level                         | Dirty Read | Non-Repeatable Read | Phantom Read |
 |-----------------------------------------|------------|---------------------|--------------|
@@ -2007,7 +2007,7 @@ sequenceDiagram
 
 PostgreSQL is worth calling out specifically here: its `REPEATABLE_READ` is implemented via snapshot isolation (MVCC), which in practice also prevents phantom reads for the simple case above — PostgreSQL's `REPEATABLE_READ` is actually stricter than the SQL standard requires (it's closer to "snapshot isolation"). The standard's anomaly table above describes the *worst case a standard-conforming database is allowed to exhibit* at each level, not necessarily what every specific engine does — the four `Isolation` values are what Spring/JPA expose portably across databases, but always check your specific database's actual guarantees when it matters.
 
-#### rollbackFor / noRollbackFor
+#### <span style="color:hsl(301,68%,44%)">rollbackFor / noRollbackFor</span>
 
 Spring only rolls back on `RuntimeException` and `Error` by default. Checked exceptions commit.
 
@@ -2021,7 +2021,7 @@ public void rollbackForCheckedExample() throws Exception { ... }
 public void noRollbackForExample(Integer empId) { ... }
 ```
 
-#### timeout and readOnly
+#### <span style="color:hsl(304,68%,44%)">timeout and readOnly</span>
 
 ```java
 @Transactional(timeout = 3)          // roll back if the tx runs > 3 seconds
@@ -2045,11 +2045,11 @@ public List<EmployeeEntity> readOnlyExample() { ... }
 
 ---
 
-### 5.25 Window / ScrollPosition API (Keyset Pagination)
+### <span style="color:hsl(307,68%,44%)">5.25 Window / ScrollPosition API (Keyset Pagination)</span>
 
 Introduced in **Spring Data JPA 3.1** (Spring Boot 3.1+). Provides cursor/keyset-based pagination as a first-class API, replacing the traditional `Page<T>` + OFFSET approach for performance-sensitive infinite-scroll scenarios.
 
-#### The problem with OFFSET pagination
+#### <span style="color:hsl(310,68%,44%)">The problem with OFFSET pagination</span>
 
 ```sql
 -- Page 100 of results (OFFSET = 100 * 10 = 1000)
@@ -2058,7 +2058,7 @@ SELECT * FROM employees ORDER BY salary DESC LIMIT 10 OFFSET 1000
 
 The database must scan and discard the first 1000 rows on every page request. Cost is O(N) per page — gets exponentially slower as users scroll deeper.
 
-#### Keyset pagination — O(1) per page
+#### <span style="color:hsl(313,68%,44%)">Keyset pagination — O(1) per page</span>
 
 Instead of skipping rows, the cursor remembers the sort key value of the last seen row and uses it as a `WHERE` predicate:
 
@@ -2088,7 +2088,7 @@ flowchart TB
     end
 ```
 
-#### Spring Data API
+#### <span style="color:hsl(316,68%,44%)">Spring Data API</span>
 
 ```java
 // Repository
@@ -2130,11 +2130,11 @@ Window<ProductEntity> page = productRepository.findTop10ByDeletedFalse(position,
 
 ---
 
-### 5.26 @SQLRestriction vs @Filter (Soft Delete Approaches)
+### <span style="color:hsl(319,68%,44%)">5.26 @SQLRestriction vs @Filter (Soft Delete Approaches)</span>
 
 Both approaches hide soft-deleted rows from queries, but with very different trade-offs.
 
-#### @Filter (ProductEntity) — opt-in per session
+#### <span style="color:hsl(323,68%,44%)">@Filter (ProductEntity) — opt-in per session</span>
 
 ```java
 @Entity
@@ -2164,7 +2164,7 @@ session.disableFilter("deletedProductFilter");
 
 The filter accepts a parameter so you can toggle between seeing active (`false`) or deleted (`true`) rows — useful for admin interfaces.
 
-#### @SQLRestriction (StockItemEntity) — always-on
+#### <span style="color:hsl(326,68%,44%)">@SQLRestriction (StockItemEntity) — always-on</span>
 
 ```java
 @Entity
@@ -2177,7 +2177,7 @@ public class StockItemEntity { ... }
 
 To see deleted rows you would need raw JDBC or a native query — there is no session toggle.
 
-#### When to use which
+#### <span style="color:hsl(329,68%,44%)">When to use which</span>
 
 |                        | `@Filter` (ProductEntity)                     | `@SQLRestriction` (StockItemEntity) |
 |------------------------|-----------------------------------------------|-------------------------------------|
@@ -2193,11 +2193,11 @@ To see deleted rows you would need raw JDBC or a native query — there is no se
 
 ---
 
-### 5.27 @Convert / AttributeConverter
+### <span style="color:hsl(332,68%,44%)">5.27 @Convert / AttributeConverter</span>
 
 `@Convert` lets you control how a Java type is mapped to a database column. The most common use is converting enums to stable string values instead of fragile ordinals.
 
-#### The problem with default enum mapping
+#### <span style="color:hsl(335,68%,44%)">The problem with default enum mapping</span>
 
 By default, JPA maps an enum using its ordinal (0, 1, 2…):
 ```java
@@ -2207,7 +2207,7 @@ private Priority priority;
 
 If you ever reorder the enum constants, existing rows silently hold the wrong value. `EnumType.STRING` is safer but stores the exact constant name — if you rename `LOW` to `LO`, existing DB rows break.
 
-#### AttributeConverter — full control over the DB representation
+#### <span style="color:hsl(338,68%,44%)">AttributeConverter — full control over the DB representation</span>
 
 ```java
 // Priority.java — each constant owns its DB value
@@ -2269,7 +2269,7 @@ The converter is registered automatically by Spring; Hibernate calls `convertToD
 
 ---
 
-### 5.28 @Formula — Computed Columns
+### <span style="color:hsl(341,68%,44%)">5.28 @Formula — Computed Columns</span>
 
 `@Formula` is a Hibernate-specific annotation that maps a Java field to a SQL subquery (or expression) instead of a real DB column. The value is computed each time the entity is loaded — it has no DB column and is read-only.
 
@@ -2315,11 +2315,11 @@ WHERE d.dept_id = ?
 
 ---
 
-### 5.29 @BatchSize and @Fetch(FetchMode.SUBSELECT) — N+1 Alternatives
+### <span style="color:hsl(344,68%,44%)">5.29 @BatchSize and @Fetch(FetchMode.SUBSELECT) — N+1 Alternatives</span>
 
 Section 5.6 introduced the N+1 problem and `JOIN FETCH` as the primary fix. `@BatchSize` and `@Fetch(SUBSELECT)` are two Hibernate-specific alternatives that work on the collection level without rewriting queries.
 
-#### The N+1 problem — recap
+#### <span style="color:hsl(348,68%,44%)">The N+1 problem — recap</span>
 
 ```java
 List<DepartmentEntity> depts = departmentRepository.findAll();   // 1 query
@@ -2329,7 +2329,7 @@ for (DepartmentEntity d : depts) {
 // Total: 1 + N queries (N = number of departments)
 ```
 
-#### @BatchSize — batches lazy loads into IN clauses
+#### <span style="color:hsl(351,68%,44%)">@BatchSize — batches lazy loads into IN clauses</span>
 
 ```java
 // DepartmentEntity.java
@@ -2353,7 +2353,7 @@ SELECT * FROM employees WHERE dept_id IN (1, 2, 3, 4)
 
 With 100 departments and `@BatchSize(size=20)`, you get `ceil(100/20) = 5` queries instead of 100.
 
-#### @Fetch(FetchMode.SUBSELECT) — one subquery for all
+#### <span style="color:hsl(354,68%,44%)">@Fetch(FetchMode.SUBSELECT) — one subquery for all</span>
 
 ```java
 @OneToMany(mappedBy = "department", fetch = FetchType.LAZY)
@@ -2370,7 +2370,7 @@ WHERE dept_id IN (SELECT dept_id FROM departments WHERE <original parent query>)
 
 All employees for all departments are loaded in one round-trip, regardless of how many departments there are.
 
-#### Comparison
+#### <span style="color:hsl(357,68%,44%)">Comparison</span>
 
 | Strategy              | Extra queries | Memory                  | Notes                           |
 |-----------------------|---------------|-------------------------|---------------------------------|
@@ -2386,14 +2386,14 @@ All employees for all departments are loaded in one round-trip, regardless of ho
 
 ---
 
-### 5.30 Jackson Serialization — @JsonManagedReference / @JsonBackReference / @JsonIgnoreProperties
+### <span style="color:hsl(0,68%,44%)">5.30 Jackson Serialization — @JsonManagedReference / @JsonBackReference / @JsonIgnoreProperties</span>
 
 Bidirectional JPA relationships cause infinite recursion when Jackson serializes them to JSON:  
 `Department → employees[] → employee.department → Department → employees[] → …`
 
 Spring provides three annotation approaches.
 
-#### @JsonManagedReference / @JsonBackReference — for @OneToMany / @ManyToOne
+#### <span style="color:hsl(3,68%,44%)">@JsonManagedReference / @JsonBackReference — for @OneToMany / @ManyToOne</span>
 
 The pair works like a directed reference: the "managed" side (the owner / parent) is serialized normally. The "back" side (the child) omits the field that points back up.
 
@@ -2424,7 +2424,7 @@ The named label (`"dept-employee"`) links the pair. Multiple bidirectional relat
 
 **Limitation:** the "back" side (Employee) can no longer be serialized with its parent — `department` is always omitted. This is fine for OneToMany/ManyToOne but problematic for ManyToMany where both sides are equally valid roots.
 
-#### @JsonIgnoreProperties — for @ManyToMany
+#### <span style="color:hsl(6,68%,44%)">@JsonIgnoreProperties — for @ManyToMany</span>
 
 For ManyToMany, both sides need to be serializable independently. `@JsonManagedReference` / `@JsonBackReference` cannot express this because they designate one side as always-primary.
 
@@ -2465,7 +2465,7 @@ private List<StudentEntity> students;
 }
 ```
 
-#### Summary
+#### <span style="color:hsl(10,68%,44%)">Summary</span>
 
 | Annotation              | Relationship              | Mechanism                               |
 |-------------------------|---------------------------|-----------------------------------------|
@@ -2477,11 +2477,11 @@ private List<StudentEntity> students;
 
 ---
 
-### 5.31 JdbcTemplate.batchUpdate()
+### <span style="color:hsl(13,68%,44%)">5.31 JdbcTemplate.batchUpdate()</span>
 
 Spring's `JdbcTemplate.batchUpdate()` sends multiple SQL statements to the database in a single round-trip, avoiding the per-row overhead of calling `jdbcTemplate.update()` in a loop.
 
-#### Simple batch INSERT (typed collection + setter)
+#### <span style="color:hsl(16,68%,44%)">Simple batch INSERT (typed collection + setter)</span>
 
 ```java
 // Returns int[][] — outer array: one entry per chunk; inner: rows affected per statement
@@ -2501,7 +2501,7 @@ public int[][] batchInsertEmployees(List<NewEmployee> employees) {
 
 The `(sql, collection, batchSize, setter)` overload automatically splits the list into chunks of `batchSize` and sends each chunk as one batch. The return type is `int[][]` — outer array has one element per chunk; inner array has one affected-row count per statement in that chunk.
 
-#### Batch UPDATE via NamedParameterJdbcTemplate
+#### <span style="color:hsl(19,68%,44%)">Batch UPDATE via NamedParameterJdbcTemplate</span>
 
 ```java
 @Transactional
@@ -2520,7 +2520,7 @@ public int[] batchUpdateSalaries(Map<Integer, Double> empIdToNewSalary) {
 
 Named parameters (`:salary`, `:empId`) are more readable than positional `?` for multi-parameter updates.
 
-#### Batch UPDATE from JavaBeans via SqlParameterSourceUtils
+#### <span style="color:hsl(22,68%,44%)">Batch UPDATE from JavaBeans via SqlParameterSourceUtils</span>
 
 ```java
 @Transactional
@@ -2564,11 +2564,11 @@ spring.jpa.properties.hibernate:
 ---
 
 <a id="6-database-schema-overview"></a>
-## 6. 🗄️ Database Schema Overview
+## <span style="color:hsl(25,68%,44%)">6. 🗄️ Database Schema Overview</span>
 
 The tables below fall into two families: the **interview-question schema** (`departments`, `employees`, `emp_test`, `scores`, `deliveries` — flat, denormalized, built purely to host the SQL problems in §4) and the **JPA-concept schema** (everything from `V6` onward — deliberately shaped to exercise a specific mapping feature per table group). Grouped by Flyway migration and by the JPA concept each group demonstrates:
 
-#### Interview-question schema (V1–V5)
+#### <span style="color:hsl(28,68%,44%)">Interview-question schema (V1–V5)</span>
 
 ```mermaid
 erDiagram
@@ -2607,7 +2607,7 @@ erDiagram
 
 `emp_test`, `scores`, and `deliveries` are intentionally standalone (no FKs) — each exists purely to seed one interview problem (ranking ties for Q3–Q4, pivoting for Q6, `HAVING` with multiple aggregate conditions for Q10) with hand-crafted data.
 
-#### JPA relationship schema (V6)
+#### <span style="color:hsl(31,68%,44%)">JPA relationship schema (V6)</span>
 
 ```mermaid
 erDiagram
@@ -2655,7 +2655,7 @@ erDiagram
     JPA_COURSE   ||--o{     JPA_STUDENT_COURSE : "course_id (N:M)"
 ```
 
-#### JPA inheritance schema (V7) — all four strategies side by side
+#### <span style="color:hsl(35,68%,44%)">JPA inheritance schema (V7) — all four strategies side by side</span>
 
 ```mermaid
 erDiagram
@@ -2712,7 +2712,7 @@ erDiagram
 
 `computer`/`mobile_phone` and `dog`/`cat` are deliberately disconnected in this diagram — that disconnection *is* the point (§5.9): `@MappedSuperclass` and `TABLE_PER_CLASS` both produce independent tables with no shared parent row to draw a relationship to.
 
-#### Other JPA-concept tables (V8–V10)
+#### <span style="color:hsl(38,68%,44%)">Other JPA-concept tables (V8–V10)</span>
 
 ```mermaid
 erDiagram
@@ -2747,7 +2747,7 @@ erDiagram
 ---
 
 <a id="7-connect-to-the-database"></a>
-## 7. 🗄️ Connect to the Database
+## <span style="color:hsl(41,68%,32%)">7. 🗄️ Connect to the Database</span>
 
 ```bash
 # psql CLI
@@ -2773,11 +2773,11 @@ Password: postgres
 ---
 
 <a id="8-rest-api-endpoints"></a>
-## 8. 🌐 REST API Endpoints
+## <span style="color:hsl(44,68%,32%)">8. 🌐 REST API Endpoints</span>
 
 Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercised with `curl` while watching the SQL log (`show-sql=true`). One controller per feature area under `controller/`.
 
-### `/api/employees` — queries, projections, paging, locking, procedures
+### <span style="color:hsl(47,68%,32%)">`/api/employees` — queries, projections, paging, locking, procedures</span>
 
 | Endpoint | Demonstrates |
 |---|---|
@@ -2805,7 +2805,7 @@ Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercis
 | `GET /api/employees/window-functions` | native ROW_NUMBER / RANK / DENSE_RANK / NTILE / LAG / LEAD |
 | `GET /api/employees/exists?email=` | `existsBy…` |
 
-### `/api/products` — Specification, soft delete, upsert, auditing
+### <span style="color:hsl(50,68%,32%)">`/api/products` — Specification, soft delete, upsert, auditing</span>
 
 | Endpoint | Demonstrates |
 |---|---|
@@ -2819,7 +2819,7 @@ Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercis
 | `DELETE /api/products/category/{c}` / `…/purge` | bulk soft delete (JPQL) / native purge |
 | `POST /api/products/upsert?name=&price=&category=` | PostgreSQL `ON CONFLICT` upsert (run twice) |
 
-### `/api/soft-delete` — the always-on soft-delete styles
+### <span style="color:hsl(53,68%,32%)">`/api/soft-delete` — the always-on soft-delete styles</span>
 
 | Endpoint | Demonstrates |
 |---|---|
@@ -2827,7 +2827,7 @@ Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercis
 | `PUT /api/soft-delete/stock-items/{id}/add-stock?qty=` | `@Modifying` bulk UPDATE |
 | `GET|POST|DELETE /api/soft-delete/notes…` | `@SoftDelete` (Hibernate 6.4+) — zero boilerplate |
 
-### `/api/departments`, `/api/relationships` — associations
+### <span style="color:hsl(56,68%,32%)">`/api/departments`, `/api/relationships` — associations</span>
 
 | Endpoint | Demonstrates |
 |---|---|
@@ -2841,7 +2841,7 @@ Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercis
 | `GET /api/relationships/courses/enrollments` | aggregate over join table (`LEFT JOIN` + `COUNT`) |
 | `GET /api/relationships/order-items/{orderId}/{code}` | `@EmbeddedId` composite-key lookup |
 
-### `/api/inheritance` — the four mapping strategies
+### <span style="color:hsl(60,68%,32%)">`/api/inheritance` — the four mapping strategies</span>
 
 | Endpoint | Strategy |
 |---|---|
@@ -2850,7 +2850,7 @@ Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercis
 | `GET /api/inheritance/animals…` | `TABLE_PER_CLASS` (UNION ALL; `/dogs?breed=`) |
 | `GET /api/inheritance/computers…` | `MappedSuperclass` (no polymorphic query) |
 
-### `/api/jdbc` — Spring JDBC callbacks & batching
+### <span style="color:hsl(63,68%,32%)">`/api/jdbc` — Spring JDBC callbacks & batching</span>
 
 | Endpoint | Demonstrates |
 |---|---|
@@ -2862,7 +2862,7 @@ Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercis
 | `PUT /api/jdbc/employees/salaries` (`{"1":75000}`) | `batchUpdate` bulk UPDATE |
 | `POST /api/jdbc/products/batch-upsert` (JSON array) | batched `ON CONFLICT` bulk upsert |
 
-### `/api/transactions` — @Transactional attributes
+### <span style="color:hsl(66,68%,32%)">`/api/transactions` — @Transactional attributes</span>
 
 | Endpoint | Demonstrates |
 |---|---|
