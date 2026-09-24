@@ -1,7 +1,7 @@
 
 services:
   postgres:
-    image: postgres:19beta1
+    image: postgres:19beta3
     container_name: learning-db-postgres
     environment:
       POSTGRES_DB: learningdb

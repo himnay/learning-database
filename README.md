@@ -44,7 +44,7 @@ mvn -pl database-graph spring-boot:run   # http://localhost:8081
 | Property | Value        |
 |----------|--------------|
 | Host     | `localhost`  |
-| Port     | `5432`       |
+| Port     | `5433` (host; container 5432) |
 | Database | `learningdb` |
 | Username | `postgres`   |
 | Password | `postgres`   |
@@ -54,7 +54,7 @@ mvn -pl database-graph spring-boot:run   # http://localhost:8081
 
 ```
 learning-database/
-├── docker-compose.yml       ← PostgreSQL 19 container
+├── docker-compose.yml       ← PostgreSQL 19 (beta3 as of Sep 2026) container
 ├── interview-queries.sql    ← ready-to-run SQL for database-core
 ├── image/                   ← shared README assets
 ├── pom.xml                  ← parent aggregator POM

@@ -34,8 +34,12 @@ public class EmployeeService {
         return employee; // dirty checking issues the UPDATE at commit, while the row is still locked
     }
 
-    /** PESSIMISTIC_READ demo: SELECT ... FOR SHARE — readers share, writers block. */
-    @Transactional(readOnly = true)
+    /**
+     * PESSIMISTIC_READ demo: SELECT ... FOR SHARE — readers share, writers block.
+     * Not readOnly: PostgreSQL rejects row locks in a read-only transaction
+     * ("cannot execute SELECT FOR SHARE in a read-only transaction").
+     */
+    @Transactional
     public EmployeeEntity readWithSharedLock(Integer empId) {
         return employeeRepository.findByIdForShare(empId)
                 .orElseThrow(() -> new IllegalArgumentException("Employee not found: " + empId));

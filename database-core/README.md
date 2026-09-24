@@ -126,8 +126,8 @@ At startup, Flyway inspects `db/migration`, compares each script's checksum agai
 <ul>
 
 - Docker & Docker Compose
-- Java 17+ (project uses Java 17 source level; tested with Java 26)
-- Maven 3.8+
+- Java 25 (inherited from super-pom; Spring Boot 4.1 needs 17+)
+- Maven 3.9+
 
 </ul>
 
@@ -151,7 +151,7 @@ mvn -pl database-core spring-boot:run
 | Property | Value        |
 |----------|--------------|
 | Host     | `localhost`  |
-| Port     | `5432`       |
+| Port     | `5433` (host) |
 | Database | `learningdb` |
 | Username | `postgres`   |
 | Password | `postgres`   |
