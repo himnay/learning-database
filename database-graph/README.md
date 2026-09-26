@@ -2,7 +2,7 @@
 
 <img src="../image/postgres19-graph-banner.png" alt="PostgreSQL 19 Native Graph Queries" width="700"/>
 
-A module of the [learning-database](../README.md) project demonstrating **SQL/PGQ** — the ISO/IEC 9075-16 (SQL:2023 Part 16) standard for querying graphs that live in regular relational tables — **natively available starting with PostgreSQL 19**.
+A module of the [learning-database](../README.md) project demonstrating **SQL/PGQ** — the ISO/IEC 9075-16 (SQL:2023 Part 16) standard for querying graphs that live in regular relational tables — **natively available starting with PostgreSQL 19** (through 19beta3 — 19beta4 dropped it, see [Limitations](#11-limitations-in-postgresql-19)).
 
 > Based on [Handling graphs with SQL/PGQ in PostgreSQL (Cybertec)](https://www.cybertec-postgresql.com/en/handling-graphs-with-sql-pgq-in-postgresql/), [PostgreSQL 19: Native Graph Queries Are Here (Medium)](https://dataengg22.medium.com/postgresql-19-native-graph-queries-are-here-and-you-dont-need-a-new-database-5cab9295631a) and the [official PostgreSQL 19 property-graph docs](https://www.postgresql.org/docs/19/ddl-property-graphs.html).
 
@@ -339,6 +339,11 @@ PostgreSQL simply rewrites the graph pattern into joins behind the scenes. You g
 
 <a id="11-limitations-in-postgresql-19"></a>
 ## <span style="color:hsl(312,80%,58%)">11. ⚠️ Limitations in PostgreSQL 19</span>
+
+> ⚠️ **SQL/PGQ is missing from PostgreSQL 19beta4 (Sep 2026).** On that image `CREATE PROPERTY GRAPH` fails with
+> `syntax error at or near "PROPERTY"`, and `pg_get_keywords()` no longer lists `property`, `graph_table`, `vertex`
+> or `edge`. This project therefore pins `postgres:19beta3`, the last beta that has the feature. Check the final
+> PostgreSQL 19 release notes before relying on SQL/PGQ.
 
 - **Fixed-depth patterns only.** Variable-length quantifiers (`+`, `*`, `{2,5}`), shortest-path and flood-fill are **not** yet supported — planned for future releases. Open-ended traversals still need a recursive CTE (see `SocialGraphService.reachable()`):
 

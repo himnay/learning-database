@@ -54,7 +54,7 @@ mvn -pl database-graph spring-boot:run   # http://localhost:8081
 
 ```
 learning-database/
-├── docker-compose.yml       ← PostgreSQL 19 (beta3 as of Sep 2026) container
+├── docker-compose.yml       ← PostgreSQL 19beta3 container (pinned: 19beta4 dropped SQL/PGQ)
 ├── interview-queries.sql    ← ready-to-run SQL for database-core
 ├── image/                   ← shared README assets
 ├── pom.xml                  ← parent aggregator POM

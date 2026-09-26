@@ -1,7 +1,7 @@
 
 services:
   postgres:
-    image: postgres:19beta3
+    image: postgres:19beta3  # pinned: 19beta4 dropped SQL/PGQ (CREATE PROPERTY GRAPH / GRAPH_TABLE), which database-graph needs
     container_name: learning-db-postgres
     environment:
       POSTGRES_DB: learningdb

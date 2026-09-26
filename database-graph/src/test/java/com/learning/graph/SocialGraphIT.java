@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 class SocialGraphIT {
 
+    // 19beta3 on purpose: 19beta4 dropped SQL/PGQ (CREATE PROPERTY GRAPH / GRAPH_TABLE).
     @Container
     @ServiceConnection
     static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:19beta3");

@@ -1643,7 +1643,7 @@ sequenceDiagram
     Req->>Req: run query / transaction
     Req->>Pool: connection.close()
     Note over Pool: NOT a real close — connection is\nreturned to the pool, socket stays open
-    Pool->>Pool: idle-timeout (30s) evicts unused connections\nabove minimum-idle; max-lifetime (30min)\nforcibly rotates even busy ones
+    Pool->>Pool: idle-timeout (30s) evicts unused connections\nabove minimum-idle#59; max-lifetime (30min)\nforcibly rotates even busy ones
 ```
 
 **`leak-detection-threshold: 5000`** — if a connection is checked out of the pool for longer than 5 seconds without being returned, HikariCP logs a warning with the stack trace of where it was borrowed. This exists because a forgotten `connection.close()` (or an exception path that skips it) permanently removes that connection from the pool — with a `maximum-pool-size` of 10, only 10 such leaks are needed to starve the entire application of database access.
@@ -1989,7 +1989,7 @@ sequenceDiagram
     participant B as Tx B
     Note over A,B: Non-repeatable read — possible under READ_COMMITTED
     A->>A: SELECT salary → reads 50000
-    B->>B: UPDATE salary=60000; COMMIT
+    B->>B: UPDATE salary=60000#59; COMMIT
     A->>A: SELECT salary again → reads 60000
     Note over A: Same row, same transaction,<br/>two different values
 ```
@@ -2000,7 +2000,7 @@ sequenceDiagram
     participant B as Tx B
     Note over A,B: Phantom read — possible under REPEATABLE_READ
     A->>A: SELECT * FROM employees WHERE salary > 80000 → 3 rows
-    B->>B: INSERT new employee (salary=90000); COMMIT
+    B->>B: INSERT new employee (salary=90000)#59; COMMIT
     A->>A: SELECT * FROM employees WHERE salary > 80000 again → 4 rows
     Note over A: Same predicate, same transaction,<br/>a new "phantom" row appeared
 ```
