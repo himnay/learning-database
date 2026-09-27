@@ -87,7 +87,7 @@ database-graph/
             └── ShopGraphService.java          ← heterogeneous graph queries
 ```
 
-Queries run through `JdbcTemplate` — Hibernate cannot parse `GRAPH_TABLE`, and it doesn't need to: the SQL is rewritten server-side.
+Queries run through [`JdbcTemplate`][JdbcTemplate] — Hibernate cannot parse `GRAPH_TABLE`, and it doesn't need to: the SQL is rewritten server-side.
 
 <a id="4-defining-a-property-graph"></a>
 ## <span style="color:hsl(70,80%,50%)">4. 🗄️ Defining a Property Graph</span>
@@ -383,3 +383,7 @@ GROUP BY p.name;
 | `GET /api/graph/shop/persons`                                                     | Multi-label match across two tables       |
 | `GET /api/graph/shop/recommendations?product=Wireless%20Headphones&minWeight=0.5` | Weighted self-edge, edge-property filter  |
 | `GET /api/graph/shop/top-customers`                                               | `GRAPH_TABLE` inside CTE + aggregation    |
+
+<!-- Library classes mentioned above, linked to their source at the versions this project builds with. -->
+
+[JdbcTemplate]: https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-jdbc/src/main/java/org/springframework/jdbc/core/JdbcTemplate.java

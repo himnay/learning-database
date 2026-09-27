@@ -18,10 +18,10 @@ A multi-module **Spring Boot + PostgreSQL 19** learning project. One shared data
 <a id="1-modules"></a>
 ## <span style="color:hsl(287,80%,58%)">1. 📦 Modules</span>
 
-| Module                                     | Port | Schema   | What it covers                                                                                                                                                                                                                                                        |
-|--------------------------------------------|------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [database-core](database-core/README.md)   | 8080 | `public` | SQL interview query problems (window functions, pivot, Nth-highest salary …) and a complete Spring Data JPA reference: relationships, cascades, inheritance strategies, projections, Specifications, auditing, soft delete, locking, `@Transactional`, JDBC, HikariCP |
-| [database-graph](database-graph/README.md) | 8081 | `graph`  | PostgreSQL 19 **SQL/PGQ** property graphs: `CREATE PROPERTY GRAPH`, `GRAPH_TABLE` / `MATCH` pattern queries, heterogeneous graphs, multiple labels, edge properties, and recursive-CTE fallbacks for variable-length paths                                            |
+| Module                                     | Port | Schema   | What it covers                                                                                                                                                                                                                                                                         |
+|--------------------------------------------|------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [database-core](database-core/README.md)   | 8080 | `public` | SQL interview query problems (window functions, pivot, Nth-highest salary …) and a complete Spring Data JPA reference: relationships, cascades, inheritance strategies, projections, Specifications, auditing, soft delete, locking, [`@Transactional`][Transactional], JDBC, HikariCP |
+| [database-graph](database-graph/README.md) | 8081 | `graph`  | PostgreSQL 19 **SQL/PGQ** property graphs: `CREATE PROPERTY GRAPH`, `GRAPH_TABLE` / `MATCH` pattern queries, heterogeneous graphs, multiple labels, edge properties, and recursive-CTE fallbacks for variable-length paths                                                             |
 
 <a id="2-quick-start"></a>
 ## <span style="color:hsl(65,80%,50%)">2. 🚀 Quick Start</span>
@@ -63,3 +63,7 @@ learning-database/
 ```
 
 Each module's README is the full documentation for its topic — start there.
+
+<!-- Library classes mentioned above, linked to their source at the versions this project builds with. -->
+
+[Transactional]: https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-tx/src/main/java/org/springframework/transaction/annotation/Transactional.java
