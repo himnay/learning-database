@@ -108,7 +108,9 @@ public interface EmployeeRepository
     Page<EmployeeEntity> findAll(Pageable pageable);
 
     /**
-     * PESSIMISTIC_WRITE → SELECT ... FOR UPDATE
+     * PESSIMISTIC_WRITE → SELECT ... FOR NO KEY UPDATE on PostgreSQL (Hibernate 7's dialect; FOR UPDATE elsewhere).
+     * The weaker PostgreSQL row lock still blocks other writers and lockers, but not the
+     * FOR KEY SHARE taken by foreign-key checks, so inserting a row that references this one doesn't wait.
      * Locks the row until the transaction commits.
      * Use when two concurrent transactions might both read then update the same row.
      * Compare with @Version (optimistic locking) — optimistic fails at commit time,
@@ -130,7 +132,8 @@ public interface EmployeeRepository
      * OPTIMISTIC — uses @Version for conflict detection at commit time.
      * Hibernate checks that the version column hasn't changed since the entity was read.
      * Throws OptimisticLockException if another transaction updated the row first.
-     * (AuditableBase has @Version — only relevant if EmployeeEntity extends it)
+     * Requires a @Version attribute (EmployeeEntity.version, V14) — on an unversioned
+     * entity Hibernate rejects the lock mode outright.
      */
     @Lock(LockModeType.OPTIMISTIC)
     Optional<EmployeeEntity> findByEmail(String email);
@@ -229,7 +232,9 @@ public interface EmployeeRepository
      *   → Database must scan + skip 1000 rows on every page. O(N) cost per page.
      *
      * Keyset pagination: SELECT * FROM employees WHERE salary < :lastSeenSalary ORDER BY salary DESC LIMIT 10
-     *   → Uses the index on salary directly. O(1) cost regardless of page depth.
+     *   → With an index on the sort keys (salary, emp_id) the database seeks straight to the
+     *     cursor, so the cost per page does not grow with depth (this demo table has no such index).
+     *   Spring Data appends the id as a tie-breaker: WHERE salary < ? OR (salary = ? AND emp_id > ?).
      *
      * Usage:
      *   Window<EmployeeEntity> first  = repo.findTop10By(ScrollPosition.keyset(), sort);

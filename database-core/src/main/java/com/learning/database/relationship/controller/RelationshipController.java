@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * JPA relationship demos:
@@ -103,7 +104,7 @@ public class RelationshipController {
     @Transactional
     public CustomerEntity removeOrder(@PathVariable Long customerId, @PathVariable Long orderId) {
         CustomerEntity customer = customerRepository.findByIdWithOrders(customerId)
-                .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + customerId));
+                .orElseThrow(() -> new NoSuchElementException("Customer not found: " + customerId));
         customer.getOrders().removeIf(o -> o.getId().equals(orderId));  // orphanRemoval deletes the row
         return customerRepository.save(customer);
     }
@@ -128,9 +129,9 @@ public class RelationshipController {
     @Transactional
     public StudentEntity enroll(@PathVariable Long studentId, @PathVariable Long courseId) {
         StudentEntity student = studentRepository.findByIdWithCourses(studentId)
-                .orElseThrow(() -> new IllegalArgumentException("Student not found: " + studentId));
+                .orElseThrow(() -> new NoSuchElementException("Student not found: " + studentId));
         CourseEntity course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new IllegalArgumentException("Course not found: " + courseId));
+                .orElseThrow(() -> new NoSuchElementException("Course not found: " + courseId));
         if (student.getCourses().stream().noneMatch(c -> c.getId().equals(courseId))) {
             student.getCourses().add(course);
         }

@@ -6,9 +6,12 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.NoSuchElementException;
+
 /**
- * Maps constraint violations (unique email, unique product code, FK) to RFC 9457 409s
- * instead of a generic 500 — the database already told us exactly what went wrong.
+ * Maps client errors to RFC 9457 problem details instead of a generic 500:
+ * constraint violations (unique email, unique product code, FK) → 409,
+ * lookups of a missing id → 404, invalid arguments → 400.
  */
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -20,5 +23,17 @@ public class ApiExceptionHandler {
                 ex.getMostSpecificCause().getMessage());
         problem.setTitle("Constraint violation");
         return problem;
+    }
+
+    /** A row looked up by id does not exist ({@code orElseThrow()} in services/controllers). */
+    @ExceptionHandler(NoSuchElementException.class)
+    public ProblemDetail onNotFound(NoSuchElementException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    /** Invalid input, e.g. an unknown isolation level or a negative scroll offset. */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail onInvalidArgument(IllegalArgumentException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 }

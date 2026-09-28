@@ -65,12 +65,29 @@ public interface ProductRepository
     /**
      * Finds the top 10 non-deleted products using keyset-based scrolling
      * (Spring Data JPA 3.1+ Window/ScrollPosition API).
+     * <p>
+     * Only ever call this with a {@link KeysetScrollPosition}; offset scrolling has its own
+     * method below. Spring Data JPA 4.1 caches the SQL of a derived query per (sort, which
+     * arguments are null) before it checks the scroll type, so once an offset call had cached
+     * {@code ... ORDER BY price OFFSET ?}, later keyset calls on the same method reused it
+     * without the {@code WHERE price > ? OR (price = ? AND id > ?)} cursor and returned the
+     * wrong window.
      *
      * @param position the scroll position (keyset) to continue scrolling from
      * @param sort the sort order used for keyset scrolling
      * @return a window of up to 10 non-deleted products
      */
     Window<ProductEntity> findTop10ByDeletedFalse(ScrollPosition position, Sort sort);
+
+    /**
+     * Same query as {@link #findTop10ByDeletedFalse} but for {@link OffsetScrollPosition}s
+     * ({@code OFFSET n}): a separate method, so its cached SQL never leaks into keyset scrolling.
+     *
+     * @param position the offset scroll position ({@code ScrollPosition.offset()} for the first window)
+     * @param sort the sort order
+     * @return a window of up to 10 non-deleted products
+     */
+    Window<ProductEntity> findFirst10ByDeletedFalse(ScrollPosition position, Sort sort);
 
     /**
      * Bulk price update — far more efficient than loading + saving each entity.

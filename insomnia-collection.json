@@ -377,7 +377,7 @@
       "modified": 1784580472598,
       "created": 1784580472598,
       "name": "Derived Queries",
-      "description": "Method-naming convention queries \u2014 Spring Data generates the query from the method signature",
+      "description": "Method-naming convention queries — Spring Data generates the query from the method signature",
       "environment": {},
       "environmentPropertyOrder": null,
       "metaSortKey": 1784580472601
@@ -753,7 +753,7 @@
       "modified": 1784580472598,
       "created": 1784580472598,
       "name": "Pagination & Sorting",
-      "description": "Page<T> \u2014 runs data + COUNT queries; Sort applied via PageRequest",
+      "description": "Page<T> — runs data + COUNT queries; Sort applied via PageRequest",
       "environment": {},
       "environmentPropertyOrder": null,
       "metaSortKey": 1784580472604
@@ -833,7 +833,7 @@
       "modified": 1784580472598,
       "created": 1784580472598,
       "name": "Slicing",
-      "description": "Slice<T> \u2014 no COUNT query, only knows if a next page exists",
+      "description": "Slice<T> — no COUNT query, only knows if a next page exists",
       "environment": {},
       "environmentPropertyOrder": null,
       "metaSortKey": 1784580472605
@@ -923,7 +923,7 @@
       "modified": 1784580472598,
       "created": 1784580472598,
       "name": "Keyset & Offset Scrolling",
-      "description": "Window<T> / ScrollPosition \u2014 cursor-based pagination, O(1) per page vs OFFSET's O(N)",
+      "description": "Window<T> / ScrollPosition — cursor-based pagination, O(1) per page vs OFFSET's O(N)",
       "environment": {},
       "environmentPropertyOrder": null,
       "metaSortKey": 1784580472606
@@ -965,12 +965,12 @@
       "parameters": [
         {
           "name": "lastSalary",
-          "value": "75000",
+          "value": "80000",
           "disabled": false
         },
         {
           "name": "lastEmpId",
-          "value": "5",
+          "value": "1",
           "disabled": false
         }
       ],
@@ -1000,7 +1000,8 @@
         {
           "name": "offset",
           "value": "0",
-          "disabled": false
+          "disabled": true,
+          "description": "omit for the first window; then pass nextCursor.offset (index of the last row seen)"
         }
       ],
       "headers": [],
@@ -1051,12 +1052,12 @@
       "parameters": [
         {
           "name": "lastPrice",
-          "value": "34.99",
+          "value": "40.00",
           "disabled": false
         },
         {
           "name": "lastId",
-          "value": "1",
+          "value": "4",
           "disabled": false
         }
       ],
@@ -1078,7 +1079,7 @@
       "modified": 1784580472598,
       "created": 1784580472598,
       "name": "Query By Example",
-      "description": "QueryByExampleExecutor \u2014 predicates built from a partially-populated probe entity",
+      "description": "QueryByExampleExecutor — predicates built from a partially-populated probe entity",
       "environment": {},
       "environmentPropertyOrder": null,
       "metaSortKey": 1784580472607
@@ -1119,7 +1120,7 @@
       "modified": 1784580472598,
       "created": 1784580472598,
       "name": "Specification",
-      "description": "JpaSpecificationExecutor \u2014 predicates composed at runtime via the Criteria API",
+      "description": "JpaSpecificationExecutor — predicates composed at runtime via the Criteria API",
       "environment": {},
       "environmentPropertyOrder": null,
       "metaSortKey": 1784580472608
@@ -1263,7 +1264,7 @@
       "parameters": [
         {
           "name": "email",
-          "value": "user@example.com",
+          "value": "alice@example.com",
           "disabled": false
         }
       ],
@@ -1361,7 +1362,7 @@
       "parentId": "fld_6f5f41001169",
       "modified": 1784580472598,
       "created": 1784580472598,
-      "url": "{{ _.core_base_url }}/api/relationships/customers/1/orders/1",
+      "url": "{{ _.core_base_url }}/api/relationships/customers/2/orders/3",
       "name": "Remove order (orphanRemoval)",
       "description": "",
       "method": "DELETE",
@@ -1545,7 +1546,7 @@
       "parentId": "fld_6f5f41001169",
       "modified": 1784580472598,
       "created": 1784580472598,
-      "url": "{{ _.core_base_url }}/api/relationships/order-items/1/P100",
+      "url": "{{ _.core_base_url }}/api/relationships/order-items/1/LAP-001",
       "name": "Order item by composite id",
       "description": "",
       "method": "GET",
@@ -1834,7 +1835,7 @@
       "modified": 1784580472598,
       "created": 1784580472598,
       "name": "Soft Delete",
-      "description": "@SQLDelete+@SQLRestriction, Hibernate @SoftDelete, and @Filter \u2014 three different styles",
+      "description": "@SQLDelete+@SQLRestriction, Hibernate @SoftDelete, and @Filter — three different styles",
       "environment": {},
       "environmentPropertyOrder": null,
       "metaSortKey": 1784580472611
@@ -2280,7 +2281,7 @@
       "modified": 1784580472598,
       "created": 1784580472598,
       "url": "{{ _.core_base_url }}/api/employees/1/salary-locked",
-      "name": "Update salary (PESSIMISTIC_WRITE \u2014 SELECT FOR UPDATE)",
+      "name": "Update salary (PESSIMISTIC_WRITE — SELECT FOR NO KEY UPDATE)",
       "description": "",
       "method": "PUT",
       "body": {},
@@ -2309,7 +2310,7 @@
       "modified": 1784580472598,
       "created": 1784580472598,
       "url": "{{ _.core_base_url }}/api/employees/1/shared-lock",
-      "name": "Read with shared lock (PESSIMISTIC_READ \u2014 SELECT FOR SHARE)",
+      "name": "Read with shared lock (PESSIMISTIC_READ — SELECT FOR SHARE)",
       "description": "",
       "method": "GET",
       "body": {},
@@ -2332,14 +2333,14 @@
       "modified": 1784580472598,
       "created": 1784580472598,
       "url": "{{ _.core_base_url }}/api/employees/by-email",
-      "name": "By email (OPTIMISTIC \u2014 @Version check at commit)",
+      "name": "By email (OPTIMISTIC — @Version check at commit)",
       "description": "",
       "method": "GET",
       "body": {},
       "parameters": [
         {
           "name": "email",
-          "value": "user@example.com",
+          "value": "alice.murphy@example.com",
           "disabled": false
         }
       ],
@@ -3224,7 +3225,7 @@
       "modified": 1784580472598,
       "created": 1784580472598,
       "name": "Type Conversion (@Convert)",
-      "description": "AttributeConverter \u2014 Priority enum stored/read as VARCHAR",
+      "description": "AttributeConverter — Priority enum stored/read as VARCHAR",
       "environment": {},
       "environmentPropertyOrder": null,
       "metaSortKey": 1784580472618

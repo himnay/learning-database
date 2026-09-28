@@ -96,10 +96,14 @@ public class ProductController {
         return productService.getProductsByCategory(category, page, size);
     }
 
-    /** Offset-based scrolling (ScrollPosition.offset). */
+    /**
+     * Offset-based scrolling — first call without params (ScrollPosition.offset()), then pass
+     * back nextCursor.offset: the index of the last row already seen, not a row count to skip.
+     */
     @GetMapping("/scroll/offset")
-    public WindowResponse<ProductEntity> scrollOffset(@RequestParam(defaultValue = "0") int offset) {
-        return EmployeeController.toResponse(productService.getProductsWindowOffset(offset, 10));
+    public WindowResponse<ProductEntity> scrollOffset(@RequestParam(required = false) Long offset) {
+        ScrollPosition position = offset == null ? ScrollPosition.offset() : ScrollPosition.offset(offset);
+        return EmployeeController.toResponse(productService.getProductsWindowOffset(position));
     }
 
     /**

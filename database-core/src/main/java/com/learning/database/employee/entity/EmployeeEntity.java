@@ -1,11 +1,6 @@
 package com.learning.database.employee.entity;
 
-import com.learning.database.employee.repository.EmployeeRepository;
-import com.learning.database.product.converter.PriorityConverter;
-import com.learning.database.product.entity.ProductEntity;
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.learning.database.product.converter.Priority;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,13 +8,13 @@ import lombok.Setter;
 import java.math.BigDecimal;
 
 /**
- * Maps to existing `employees` table (V2 migration).
+ * Maps to existing `employees` table (V2 migration; `version` column added in V14).
  *
  * Demonstrates:
  *   @ManyToOne bidirectional   — owning side (holds FK dept_id)
  *   @NamedEntityGraph          — reusable eager-loading graph for department
  *   @NamedStoredProcedureQuery — called via @Procedure in EmployeeRepository
- *   @Convert (autoApply)       — PriorityConverter auto-converts Priority enum ↔ VARCHAR
+ *   @Version                   — optimistic locking (needed by @Lock(OPTIMISTIC) in EmployeeRepository)
  *   @JsonBackReference         — prevents infinite JSON recursion on the "many" side
  */
 @Entity
@@ -64,14 +59,14 @@ public class EmployeeEntity {
     private String colB;
 
     /**
-     * @Convert via PriorityConverter (autoApply = true on the converter).
-     * Hibernate maps Priority enum ↔ VARCHAR "low"/"normal"/"high" in the DB.
-     * No explicit @Convert needed here because autoApply = true on PriorityConverter.
-     * Without the converter, JPA would use ordinal (0/1/2) by default — fragile.
-     *
-     * Note: `priority` column doesn't exist in the employees table (it's on product).
-     * This is shown as a conceptual demo — in the project, Priority is used on ProductEntity.
+     * Optimistic-locking version (V14). Hibernate adds {@code AND version = ?} to every
+     * UPDATE/DELETE it issues for this entity and bumps the value; a zero row count means a
+     * concurrent writer got there first ({@code OptimisticLockException}).
+     * {@code @Lock(OPTIMISTIC)} additionally re-reads the version at commit, even for rows
+     * that were only read. JPQL bulk updates ({@code @Modifying}) bypass it.
      */
+    @Version
+    private Long version;
 
     /**
      * Owning side: Employee table holds FK column `dept_id`.

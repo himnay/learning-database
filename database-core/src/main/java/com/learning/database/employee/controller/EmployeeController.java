@@ -188,7 +188,7 @@ public class EmployeeController {
 
     // ── Locking ──────────────────────────────────────────────────────────────
 
-    /** PESSIMISTIC_WRITE (SELECT ... FOR UPDATE) held for the service transaction. */
+    /** PESSIMISTIC_WRITE (SELECT ... FOR NO KEY UPDATE on PostgreSQL) held for the service transaction. */
     @PutMapping("/{id}/salary-locked")
     public EmployeeEntity updateSalaryLocked(@PathVariable Integer id, @RequestParam BigDecimal salary) {
         return employeeService.updateSalaryWithPessimisticLock(id, salary);

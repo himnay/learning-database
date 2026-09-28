@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 /**
@@ -22,14 +23,14 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
 
     /**
-     * PESSIMISTIC_WRITE demo: SELECT ... FOR UPDATE locks the row, then the salary
+     * PESSIMISTIC_WRITE demo: SELECT ... FOR NO KEY UPDATE (PostgreSQL) locks the row, then the salary
      * update is flushed on commit. A concurrent call for the same id blocks until
      * this transaction ends — try it with two parallel requests.
      */
     @Transactional
     public EmployeeEntity updateSalaryWithPessimisticLock(Integer empId, BigDecimal newSalary) {
         EmployeeEntity employee = employeeRepository.findByIdForUpdate(empId)
-                .orElseThrow(() -> new IllegalArgumentException("Employee not found: " + empId));
+                .orElseThrow(() -> new NoSuchElementException("Employee not found: " + empId));
         employee.setSalary(newSalary);
         return employee; // dirty checking issues the UPDATE at commit, while the row is still locked
     }
@@ -42,7 +43,7 @@ public class EmployeeService {
     @Transactional
     public EmployeeEntity readWithSharedLock(Integer empId) {
         return employeeRepository.findByIdForShare(empId)
-                .orElseThrow(() -> new IllegalArgumentException("Employee not found: " + empId));
+                .orElseThrow(() -> new NoSuchElementException("Employee not found: " + empId));
     }
 
     /** OPTIMISTIC lock demo: version checked at commit; no DB row lock taken. */

@@ -108,23 +108,27 @@ public class ProductService {
     /**
      * Offset scroll: equivalent to traditional pagination but via the ScrollPosition API.
      * Still uses OFFSET internally — use keyset for better performance on large tables.
+     *
+     * Start with ScrollPosition.offset(), NOT offset(0): an offset position n means "after the
+     * element at index n", so Spring Data runs OFFSET n + 1 and offset(0) skips the first row.
+     * Continue with window.positionAt(window.size() - 1).
      */
     @Transactional(readOnly = true)
-    public Window<ProductEntity> getProductsWindowOffset(int offset, int limit) {
-        ScrollPosition position = ScrollPosition.offset(offset);
+    public Window<ProductEntity> getProductsWindowOffset(ScrollPosition position) {
         Sort sort = Sort.by(Sort.Direction.ASC, "price");
-        return productRepository.findTop10ByDeletedFalse(position, sort);
+        return productRepository.findFirst10ByDeletedFalse(position, sort);
     }
 
     /**
-     * Keyset scroll: uses WHERE price > :lastSeenPrice (from the cursor) instead of OFFSET.
-     * O(1) regardless of how deep into the result set you scroll.
+     * Keyset scroll: uses WHERE price > :lastPrice OR (price = :lastPrice AND id > :lastId)
+     * (from the cursor) instead of OFFSET, so with an index on the sort keys the cost per
+     * window does not grow with how deep you scroll.
      *
      * Usage pattern:
-     *   Window<ProductEntity> first = getProductsWindowKeyset(ScrollPosition.keyset(), 10);
+     *   Window<ProductEntity> first = getProductsWindowKeyset(ScrollPosition.keyset());
      *   if (first.hasNext()) {
      *       ScrollPosition next = first.positionAt(first.size() - 1);
-     *       Window<ProductEntity> second = getProductsWindowKeyset(next, 10);
+     *       Window<ProductEntity> second = getProductsWindowKeyset(next);
      *   }
      */
     @Transactional(readOnly = true)
