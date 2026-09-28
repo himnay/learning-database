@@ -1,10 +1,10 @@
-# <span style="color:hsl(102,80%,58%)">database-graph — SQL/PGQ Property Graphs in PostgreSQL 19</span>
+# <span style="color:hsl(102,80%,58%)">database-graph — SQL/PGQ Property Graphs in PostgreSQL 19 beta</span>
 
-<img src="../image/postgres19-graph-banner.png" alt="PostgreSQL 19 Native Graph Queries" width="700"/>
+<img src="../image/spring-logo.png" alt="Spring" width="70"/> <img src="../image/postgresql-logo.png" alt="PostgreSQL" width="70"/>
 
-A module of the [learning-database](../README.md) project demonstrating **SQL/PGQ** — the ISO/IEC 9075-16 (SQL:2023 Part 16) standard for querying graphs that live in regular relational tables — **natively available starting with PostgreSQL 19** (through 19beta3 — 19beta4 dropped it, see [Limitations](#11-limitations-in-postgresql-19)).
+A module of the [learning-database](../README.md) project demonstrating **SQL/PGQ** — the ISO/IEC 9075-16 (SQL:2023 Part 16) standard for querying graphs that live in regular relational tables — **natively available in the PostgreSQL 19 betas up to 19beta3**. It was reverted in 19beta4 (September 2026) and will not ship in PostgreSQL 19, so everything in this module is beta-only — see [Status & Limitations](#11-status--limitations-postgresql-19-betas).
 
-> Based on [Handling graphs with SQL/PGQ in PostgreSQL (Cybertec)](https://www.cybertec-postgresql.com/en/handling-graphs-with-sql-pgq-in-postgresql/), [PostgreSQL 19: Native Graph Queries Are Here (Medium)](https://dataengg22.medium.com/postgresql-19-native-graph-queries-are-here-and-you-dont-need-a-new-database-5cab9295631a) and the [official PostgreSQL 19 property-graph docs](https://www.postgresql.org/docs/19/ddl-property-graphs.html).
+> Based on [Handling graphs with SQL/PGQ in PostgreSQL (Cybertec)](https://www.cybertec-postgresql.com/en/handling-graphs-with-sql-pgq-in-postgresql/), [PostgreSQL 19: Native Graph Queries Are Here (Medium)](https://dataengg22.medium.com/postgresql-19-native-graph-queries-are-here-and-you-dont-need-a-new-database-5cab9295631a) and the PostgreSQL 19 beta property-graph docs ([archived copy](https://web.archive.org/web/20260912053436/https://www.postgresql.org/docs/19/ddl-property-graphs.html) — the page was removed with the revert).
 
 ---
 
@@ -20,7 +20,7 @@ A module of the [learning-database](../README.md) project demonstrating **SQL/PG
 8. 🧩 [Heterogeneous Graphs & Multiple Labels](#8-heterogeneous-graphs--multiple-labels)
 9. 🧮 [Mixing GRAPH_TABLE with Classic SQL](#9-mixing-graph_table-with-classic-sql)
 10. ⚙️ [Under the Hood — EXPLAIN](#10-under-the-hood--explain)
-11. ⚠️ [Limitations in PostgreSQL 19](#11-limitations-in-postgresql-19)
+11. ⚠️ [Status & Limitations (PostgreSQL 19 betas)](#11-status--limitations-postgresql-19-betas)
 12. 🌐 [REST Endpoints](#12-rest-endpoints)
 
 ---
@@ -28,7 +28,7 @@ A module of the [learning-database](../README.md) project demonstrating **SQL/PG
 <a id="1-what-is-sqlpgq"></a>
 ## <span style="color:hsl(17,80%,58%)">1. 🕸️ What is SQL/PGQ?</span>
 
-PostgreSQL 19 adds two SQL constructs:
+The PostgreSQL 19 betas (up to 19beta3) add two SQL constructs:
 
 | Construct               | Purpose                                                               |
 |-------------------------|-----------------------------------------------------------------------|
@@ -55,7 +55,7 @@ All objects live in the dedicated **`graph` schema** of `learningdb`, so this mo
 ## <span style="color:hsl(155,80%,58%)">2. 🚀 Quick Start</span>
 
 ```bash
-# 1. Start PostgreSQL 19 (from the repository root)
+# 1. Start PostgreSQL 19beta3 (from the repository root)
 docker compose up -d
 
 # 2. Run this module (Flyway creates tables, seed data and both property graphs)
@@ -64,6 +64,8 @@ mvn -pl database-graph spring-boot:run
 # 3. Try a graph query
 curl "http://localhost:8081/api/graph/social/friends-of-friends?name=Alice"
 ```
+
+To run the SQL snippets below by hand, open `docker exec -it learning-db-postgres psql -U postgres -d learningdb` and first `SET search_path = graph;` — every object of this module lives in the `graph` schema.
 
 <a id="3-module-structure"></a>
 ## <span style="color:hsl(292,80%,58%)">3. 🏗️ Module Structure</span>
@@ -126,7 +128,20 @@ CREATE PROPERTY GRAPH social
     );
 ```
 
-Read it like a contract: all rows in `person` are vertices labelled `person`, exposing four columns as properties. Rows in `knows` are directed edges from `person(a)` to `person(b)`, exposing `since`.
+Read it like a contract: all rows in `person` are vertices labelled `person`, exposing four columns as properties. Rows in `knows` are directed edges from `person(a)` to `person(b)`, exposing `since`. With the seed data from V1, the graph looks like this (edge labels are `since`):
+
+```mermaid
+flowchart LR
+    A((Alice)) -- "2018" --> B((Bob))
+    B -- "2019" --> A
+    A -- "2020" --> C((Carol))
+    B -- "2020" --> C
+    C -- "2021" --> B
+    C -- "2021" --> D((Dan))
+    D -- "2022" --> E((Eve))
+    E -- "2019" --> F((Frank))
+    F -- "2023" --> A
+```
 
 Full syntax (from `\h CREATE PROPERTY GRAPH`):
 
@@ -337,13 +352,15 @@ ORDER BY total_spend DESC;
 
 PostgreSQL simply rewrites the graph pattern into joins behind the scenes. You get more compact, intention-revealing syntax — and the `CREATE PROPERTY GRAPH` statement doubles as documentation of your data model. Try it live: `GET /api/graph/social/explain`.
 
-<a id="11-limitations-in-postgresql-19"></a>
-## <span style="color:hsl(312,80%,58%)">11. ⚠️ Limitations in PostgreSQL 19</span>
+<a id="11-status--limitations-postgresql-19-betas"></a>
+## <span style="color:hsl(312,80%,58%)">11. ⚠️ Status & Limitations (PostgreSQL 19 betas)</span>
 
-> ⚠️ **SQL/PGQ is missing from PostgreSQL 19beta4 (Sep 2026).** On that image `CREATE PROPERTY GRAPH` fails with
-> `syntax error at or near "PROPERTY"`, and `pg_get_keywords()` no longer lists `property`, `graph_table`, `vertex`
-> or `edge`. This project therefore pins `postgres:19beta3`, the last beta that has the feature. Check the final
-> PostgreSQL 19 release notes before relying on SQL/PGQ.
+> ⚠️ **SQL/PGQ was reverted from PostgreSQL 19 in 19beta4** ([release announcement](https://www.postgresql.org/about/news/postgresql-19-beta-4-released-3386/),
+> 2026-09-24), so `CREATE PROPERTY GRAPH` and `GRAPH_TABLE` will not ship in PostgreSQL 19 (GA is expected in October 2026);
+> the earliest release that could bring them back is PostgreSQL 20. On 19beta4 `CREATE PROPERTY GRAPH` fails with
+> `syntax error at or near "PROPERTY"`, and `pg_get_keywords()` no longer lists `property`, `graph_table`, `vertex` or `edge`.
+> This project therefore pins `postgres:19beta3`, the last beta that has the feature. Beta data directories don't carry over
+> between betas either — moving the container to another beta needs `pg_dump`/`pg_upgrade` or a fresh volume.
 
 - **Fixed-depth patterns only.** Variable-length quantifiers (`+`, `*`, `{2,5}`), shortest-path and flood-fill are **not** yet supported — planned for future releases. Open-ended traversals still need a recursive CTE (see `SocialGraphService.reachable()`):
 
@@ -357,9 +374,10 @@ WITH RECURSIVE reachable AS (
     FROM knows k JOIN reachable r ON k.a = r.id
     WHERE r.depth < 4
 )
-SELECT DISTINCT p.name, MIN(r.depth) AS depth
+SELECT p.name, MIN(r.depth) AS depth
 FROM reachable r JOIN person p ON p.id = r.id
-GROUP BY p.name;
+GROUP BY p.name
+ORDER BY depth, name;
 ```
 
 - `COLUMNS (p.*)` is not supported — properties must be listed explicitly.

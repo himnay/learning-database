@@ -62,14 +62,14 @@ All tables are created and seeded automatically by Flyway on startup.
 
 ## <span style="color:hsl(344,80%,58%)">What database-core does</span>
 
-`database-core` is a runnable Spring Boot application (port **8080**) that owns the `public` schema of the shared `learningdb` PostgreSQL 19 database. It bundles four things into one module:
+`database-core` is a runnable Spring Boot application (port **8080**) that owns the `public` schema of the shared `learningdb` database (the `postgres:19beta3` container from the root `docker-compose.yml` — nothing in this module needs more than PostgreSQL 14). It bundles four things into one module:
 
-1. **Schema as code** — 13 Flyway migrations (`V1`–`V13`) create and seed every table, index, stored procedure, and sequence the module uses. No manual setup, fully reproducible.
+1. **Schema as code** — 14 Flyway migrations (`V1`–`V14`) create and seed every table, index, stored procedure, and sequence the module uses. No manual setup, fully reproducible.
 2. **SQL interview practice** — 10 classic query problems (window functions, pivot, Nth-highest salary, HAVING vs WHERE, LAG/LEAD, NTILE …) with runnable data in `interview-queries.sql`.
 3. **A complete Spring Data JPA reference** — 31 concepts, each backed by a real entity/repository/service class: relationships, cascades, all four inheritance strategies, projections, Specifications, QBE, composite keys, auditing, soft delete, locking, [`@Transactional`][Transactional] propagation/isolation, keyset pagination, converters, [`@Formula`][Formula], batch fetching, and JDBC ([`JdbcTemplate`][JdbcTemplate], [`NamedParameterJdbcTemplate`][NamedParameterJdbcTemplate], `batchUpdate`).
 4. **Concurrency & infrastructure demos** — HikariCP pool tuning, optimistic/pessimistic locking, and REQUIRES_NEW audit trails that survive rollbacks.
 
-Its sibling module [`database-graph`](../database-graph/README.md) covers PostgreSQL 19's SQL/PGQ property-graph queries and lives in its own `graph` schema of the same database.
+Its sibling module [`database-graph`](../database-graph/README.md) covers SQL/PGQ property-graph queries — available only in the PostgreSQL 19 betas up to 19beta3, reverted before the 19 release — and lives in its own `graph` schema of the same database.
 
 ## <span style="color:hsl(122,80%,58%)">Why this project exists</span>
 
@@ -77,7 +77,7 @@ Most tutorials teach JPA or SQL in isolation, with toy examples that never touch
 
 The project sits at the intersection of three layers that most JPA discussions blur together:
 
-1. **The relational model** — how PostgreSQL physically stores rows, indexes, and constraints (Flyway migrations `V1`–`V10`).
+1. **The relational model** — how PostgreSQL physically stores rows, indexes, and constraints (Flyway migrations `V1`–`V14`).
 2. **The ORM mapping layer** — how Hibernate/JPA annotations translate Java object graphs into that relational model, and the leaks in that abstraction (N+1 queries, locking, inheritance, auditing).
 3. **The transactional/concurrency layer** — what guarantees the database gives you when multiple requests touch the same data concurrently, and how Spring's [`@Transactional`][Transactional] exposes (and sometimes hides) those guarantees.
 
@@ -102,8 +102,8 @@ flowchart TB
         CONN3[(conn)]
     end
 
-    subgraph DB["PostgreSQL 19 (Docker)"]
-        TBL[("Tables created &amp;\nseeded by Flyway\nV1 … V10")]
+    subgraph DB["PostgreSQL 19beta3 (Docker)"]
+        TBL[("Tables created &amp;\nseeded by Flyway\nV1 … V14")]
     end
 
     HIB --> Pool
@@ -113,7 +113,7 @@ flowchart TB
     FLY["Flyway"] -. "runs once at startup,\nbefore the app serves traffic" .-> DB
 ```
 
-At startup, Flyway inspects `db/migration`, compares each script's checksum against a `flyway_schema_history` table it maintains inside `learningdb`, and applies any migration that hasn't run yet — in strict version order (`V1` → `V10`). Only after all migrations succeed does Spring Boot finish context initialization and start accepting requests. Every table, index, function, and seed row you see in this document is produced by that process — there is no manual setup step.
+At startup, Flyway inspects `db/migration`, compares each script's checksum against a `flyway_schema_history` table it maintains inside `learningdb`, and applies any migration that hasn't run yet — in strict version order (`V1` → `V14`). Only after all migrations succeed does Spring Boot finish context initialization and start accepting requests. Every table, index, function, and seed row you see in this document is produced by that process — there is no manual setup step.
 
 ---
 
@@ -126,7 +126,7 @@ At startup, Flyway inspects `db/migration`, compares each script's checksum agai
 <ul>
 
 - Docker & Docker Compose
-- Java 25 (inherited from super-pom; Spring Boot 4.1 needs 17+)
+- Java 27 (the build compiles for release 27, set by super-pom 1.2.0; Spring Boot 4.1 itself needs 17+)
 - Maven 3.9+
 
 </ul>
@@ -143,7 +143,7 @@ mvn -pl database-core spring-boot:run
 # 3. Application starts on http://localhost:8080
 ```
 
-> Flyway runs **V1 → V10** migrations on startup, creating all tables and seeding all sample data.  
+> Flyway runs **V1 → V14** migrations on startup, creating all tables and seeding all sample data.  
 > Open `interview-queries.sql` in any SQL client and run the queries against `learningdb`.
 
 ### <span style="color:hsl(89,80%,58%)">Database Connection Details</span>
@@ -164,101 +164,54 @@ mvn -pl database-core spring-boot:run
 ```
 learning-database/
 │
-├── docker-compose.yml                    ← PostgreSQL 19 (shared by all modules)
-├── interview-queries.sql                 ← All 10 interview queries ready to run
+├── docker-compose.yml                    ← PostgreSQL 19beta3 (shared by all modules)
+├── interview-queries.sql                 ← all 10 interview queries, ready to run
+├── insomnia-collection.json              ← every REST endpoint below, ready to import
 ├── pom.xml                               ← parent aggregator POM
 │
 └── database-core/                        ← this module
     ├── pom.xml
-    └── src/main/
-    ├── resources/
-    │   ├── application.yml               ← DB config + JPA + HikariCP
-    │   └── db/migration/
-    │       ├── V1__create_departments.sql
-    │       ├── V2__create_employees.sql
-    │       ├── V3__create_emp_test.sql
-    │       ├── V4__create_scores.sql
-    │       ├── V5__create_deliveries.sql
-    │       ├── V6__jpa_relationship_tables.sql
-    │       ├── V7__jpa_inheritance_tables.sql
-    │       ├── V8__jpa_other_tables.sql
-    │       ├── V9__stored_procedures.sql
-    │       └── V10__additional_columns.sql
-    │
-    └── java/com/learning/database/
+    └── src/
+        ├── main/resources/
+        │   ├── application.yml           ← DB config + JPA + HikariCP
+        │   └── db/migration/             ← V1__create_departments.sql … V14__employee_version_column.sql (§3)
         │
-        ├── config/
-        │   └── AuditConfig.java              ← @EnableJpaAuditing + AuditorAware
+        ├── main/java/com/learning/database/
+        │   ├── LearningDatabaseApplication.java
+        │   ├── ApiExceptionHandler.java  ← 409 constraint violation / 404 missing id / 400 bad argument
+        │   │
+        │   ├── audit/
+        │   │   ├── config/AuditConfig.java      ← @EnableJpaAuditing + AuditorAware
+        │   │   └── entity/AuditableBase.java    ← @MappedSuperclass: @CreatedDate, @LastModifiedDate, @Version
+        │   │
+        │   ├── employee/                 ← maps the V1/V2 interview tables
+        │   │   ├── controller/           ← EmployeeController, DepartmentController
+        │   │   ├── entity/               ← DepartmentEntity (@Formula, @BatchSize, @JsonManagedReference)
+        │   │   │                            EmployeeEntity (@NamedEntityGraph, @NamedStoredProcedureQuery, @Version)
+        │   │   ├── projection/           ← EmployeeNameView (interface), EmployeeSummaryDTO (record)
+        │   │   ├── repository/           ← EmployeeRepository (@EntityGraph, @Lock, @Modifying, Window, @Procedure)
+        │   │   │                            DepartmentRepository (JOIN FETCH)
+        │   │   └── service/              ← EmployeeService (transactions around the @Lock demos)
+        │   │
+        │   ├── product/
+        │   │   ├── controller/           ← ProductController
+        │   │   ├── converter/            ← Priority enum + PriorityConverter (@Converter(autoApply = true))
+        │   │   ├── entity/               ← ProductEntity (@SQLDelete + @Filter soft delete, extends AuditableBase)
+        │   │   ├── repository/           ← ProductRepository (Specifications, Window, @Modifying, ON CONFLICT upsert)
+        │   │   ├── service/              ← ProductService (soft delete, Specification, QBE, paging, scrolling, procedure)
+        │   │   └── specification/        ← ProductSpecification (composable predicates)
+        │   │
+        │   ├── relationship/             ← @OneToOne User↔Address, @OneToMany Customer↔Order, @ManyToMany Student↔Course
+        │   ├── embeddable/               ← OrderItemId (@Embeddable) + OrderItemEntity (@EmbeddedId)
+        │   ├── inheritance/              ← SINGLE_TABLE (Vehicle), JOINED (Payment), TABLE_PER_CLASS (Animal),
+        │   │                                @MappedSuperclass (DeviceBase → Computer, MobilePhone)
+        │   ├── softdelete/               ← StockItemEntity (@SQLRestriction), NoteEntity (@SoftDelete)
+        │   ├── transaction/              ← TransactionDemoService (all 7 propagations, 4 isolation levels), AuditLogService
+        │   └── jdbc/                     ← JdbcDemoService (RowMapper, ResultSetExtractor, RowCallbackHandler, batchUpdate)
         │
-        ├── entity/
-        │   ├── common/
-        │   │   └── AuditableBase.java        ← @MappedSuperclass: @CreatedDate, @LastModifiedDate, @Version
-        │   │
-        │   ├── converter/
-        │   │   ├── Priority.java             ← Enum (LOW/NORMAL/HIGH) with stable DB values
-        │   │   └── PriorityConverter.java    ← @Converter(autoApply=true) Priority ↔ VARCHAR
-        │   │
-        │   ├── interview/                    ← Map to existing V1/V2 tables
-        │   │   ├── DepartmentEntity.java     ← @Formula, @BatchSize, @JsonManagedReference
-        │   │   └── EmployeeEntity.java       ← @NamedEntityGraph, @NamedStoredProcedureQuery, @JsonBackReference
-        │   │
-        │   ├── relationship/
-        │   │   ├── AddressEntity.java        ← @OneToOne inverse
-        │   │   ├── UserEntity.java           ← @OneToOne owning (holds address_id FK)
-        │   │   ├── CustomerEntity.java       ← @OneToMany + @JsonManagedReference
-        │   │   ├── OrderEntity.java          ← @ManyToOne + @JsonBackReference
-        │   │   ├── StudentEntity.java        ← @ManyToMany owning + @JsonIgnoreProperties
-        │   │   └── CourseEntity.java         ← @ManyToMany inverse + @JsonIgnoreProperties
-        │   │
-        │   ├── inheritance/
-        │   │   ├── VehicleEntity.java        ← SINGLE_TABLE base (@DiscriminatorColumn)
-        │   │   ├── CarEntity.java            ← @DiscriminatorValue("Car")
-        │   │   ├── MotorcycleEntity.java     ← @DiscriminatorValue("Motorcycle")
-        │   │   ├── PaymentEntity.java        ← JOINED base
-        │   │   ├── CreditCardPaymentEntity.java
-        │   │   ├── BankTransferPaymentEntity.java
-        │   │   ├── DeviceBase.java           ← @MappedSuperclass (no table)
-        │   │   ├── ComputerEntity.java       ← own table, inherits DeviceBase
-        │   │   ├── MobilePhoneEntity.java    ← own table, inherits DeviceBase
-        │   │   ├── AnimalEntity.java         ← TABLE_PER_CLASS base
-        │   │   ├── DogEntity.java
-        │   │   └── CatEntity.java
-        │   │
-        │   ├── embeddable/
-        │   │   ├── OrderItemId.java          ← @Embeddable composite key
-        │   │   └── OrderItemEntity.java      ← @EmbeddedId
-        │   │
-        │   └── softdelete/
-        │       ├── ProductEntity.java        ← @SQLDelete + @Filter + @Convert(Priority) + AuditableBase
-        │       └── StockItemEntity.java      ← @SQLDelete + @SQLRestriction (always-on, simpler)
-        │
-        ├── projection/
-        │   ├── EmployeeNameView.java         ← Interface projection (Spring proxy)
-        │   └── EmployeeSummaryDTO.java       ← DTO / record projection
-        │
-        ├── repository/
-        │   ├── DepartmentRepository.java     ← JOIN FETCH demo
-        │   ├── EmployeeRepository.java       ← @EntityGraph, @Lock, @Modifying, Window, @Procedure
-        │   ├── UserRepository.java
-        │   ├── CustomerRepository.java
-        │   ├── CourseRepository.java         ← JOIN FETCH, enrollment counts
-        │   ├── StudentRepository.java
-        │   ├── VehicleRepository.java        ← Polymorphic SINGLE_TABLE queries
-        │   ├── PaymentRepository.java        ← Polymorphic JOINED queries
-        │   ├── ComputerRepository.java
-        │   ├── AnimalRepository.java         ← Polymorphic TABLE_PER_CLASS (UNION ALL)
-        │   ├── OrderItemRepository.java      ← Composite key lookup
-        │   ├── StockItemRepository.java      ← @SQLRestriction demo
-        │   └── ProductRepository.java        ← JpaSpecificationExecutor + @Modifying + Window
-        │
-        ├── service/
-        │   ├── ProductService.java           ← Soft delete, Spec, QBE, Paging, Window, @Modifying
-        │   ├── TransactionDemoService.java   ← All 7 propagation types + 4 isolation levels
-        │   ├── AuditLogService.java          ← REQUIRES_NEW audit log demo
-        │   └── JdbcDemoService.java          ← RowMapper, ResultSetExtractor, batchUpdate
-        │
-        └── specification/
-            └── ProductSpecification.java     ← Composable Specification predicates
+        └── test/java/com/learning/database/
+            ├── EmployeeLockingIT.java    ← Testcontainers: all migrations + the @Lock demos
+            └── ProductScrollIT.java      ← Testcontainers: offset vs keyset Window scrolling
 ```
 
 ---
@@ -270,10 +223,10 @@ Flyway is a **schema-as-code / migration-based** tool: instead of a DBA hand-edi
 
 <ul>
 
-- **Reproducibility** — anyone who clones the repo and runs `docker compose up -d && mvn spring-boot:run` gets byte-for-byte the same schema and seed data, because the migrations are the single source of truth (see `V1`–`V10` below).
+- **Reproducibility** — anyone who clones the repo and runs `docker compose up -d && mvn spring-boot:run` gets byte-for-byte the same schema and seed data, because the migrations are the single source of truth (see `V1`–`V14` below).
 - **Auditability** — Flyway records every applied migration, its checksum, and its execution time in a `flyway_schema_history` table. If a script is edited after being applied, the checksum mismatch causes the next startup to fail loudly rather than silently drift.
 - **Safe incremental evolution** — `V10__additional_columns.sql` demonstrates this directly: rather than rewriting `V8`'s `product` table definition, a brand-new migration *adds* a `priority` column and a new `stock_item` table. Production schemas are never edited retroactively; they only move forward.
-- **Ordering guarantees** — migrations are versioned (`V1`, `V2`, … `V10`) so dependent objects are always created after what they depend on. `V6` (relationship tables) must run before any entity referencing `jpa_customer`/`jpa_order` can be persisted; `V9` (stored procedures) references columns created back in `V2`.
+- **Ordering guarantees** — migrations are versioned (`V1`, `V2`, … `V14`) so dependent objects are always created after what they depend on. `V6` (relationship tables) must run before any entity referencing `jpa_customer`/`jpa_order` can be persisted; `V9` (stored procedures) references columns created back in `V2`.
 
 </ul>
 
@@ -288,28 +241,30 @@ flowchart LR
     V6 --> V7["V7 jpa_inheritance_tables"] --> V8["V8 jpa_other_tables"] --> V9["V9 stored_procedures"]
     V9 --> V10["V10 additional_columns"]
     V10 --> V11["V11 note_table_and_product_unique"] --> V12["V12 fix_sequences_and_priority_case"] --> V13["V13 dept_stats_procedure"]
-    V13 --> DONE(["Schema ready —\nSpring context finishes,\napp accepts traffic"])
+    V13 --> V14["V14 employee_version_column"]
+    V14 --> DONE(["Schema ready —\nSpring context finishes,\napp accepts traffic"])
 
     style CHECK fill:#333,stroke:#999,color:#fff
 ```
 
 Each script only ever runs once per database (tracked by version number in `flyway_schema_history`); re-running `mvn spring-boot:run` against an already-migrated database is a no-op for schema changes.
 
-| Version | File                          | What it creates                                                                                                              |
-|---------|-------------------------------|------------------------------------------------------------------------------------------------------------------------------|
-| V1      | `create_departments.sql`      | `departments` table + 4 rows                                                                                                 |
-| V2      | `create_employees.sql`        | `employees` table + 10 rows across 4 depts                                                                                   |
-| V3      | `create_emp_test.sql`         | `emp_test` table (A/B/C/D + salaries) + salary index                                                                         |
-| V4      | `create_scores.sql`           | `scores` table (Aarav/Priya/Rahul, 3 subjects each)                                                                          |
-| V5      | `create_deliveries.sql`       | `deliveries` table (10 restaurant orders)                                                                                    |
-| V6      | `jpa_relationship_tables.sql` | `jpa_address`, `jpa_user`, `jpa_customer`, `jpa_order`, `jpa_student`, `jpa_course`, `jpa_student_course`                    |
-| V7      | `jpa_inheritance_tables.sql`  | `vehicle`, `payment`, `credit_card_payment`, `bank_transfer_payment`, `computer`, `mobile_phone`, `dog`, `cat`, `animal_seq` |
-| V8      | `jpa_other_tables.sql`        | `jpa_order_item` (composite PK), `product` (soft delete + audit)                                                             |
-| V9      | `stored_procedures.sql`       | 3 PostgreSQL functions: `get_total_employees`, `get_employee_count_by_dept`, `get_dept_salary_stats`                         |
-| V10     | `additional_columns.sql`      | `ALTER TABLE product ADD COLUMN priority VARCHAR(20)` + `CREATE TABLE stock_item` (id, name, stock, deleted) + seed data     |
-| V11     | `note_table_and_product_unique.sql` | `note` table (Hibernate [`@SoftDelete`][SoftDelete] demo) + `UNIQUE (name)` constraint on `product` (upsert `ON CONFLICT` target)    |
+| Version | File                                  | What it creates                                                                                                                                    |
+|---------|---------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| V1      | `create_departments.sql`              | `departments` table + 4 rows                                                                                                                       |
+| V2      | `create_employees.sql`                | `employees` table + 10 rows across 4 depts                                                                                                         |
+| V3      | `create_emp_test.sql`                 | `emp_test` table (A/B/C/D + salaries) + salary index                                                                                               |
+| V4      | `create_scores.sql`                   | `scores` table (Aarav/Priya/Rahul, 3 subjects each)                                                                                                |
+| V5      | `create_deliveries.sql`               | `deliveries` table (10 restaurant orders)                                                                                                          |
+| V6      | `jpa_relationship_tables.sql`         | `jpa_address`, `jpa_user`, `jpa_customer`, `jpa_order`, `jpa_student`, `jpa_course`, `jpa_student_course`                                          |
+| V7      | `jpa_inheritance_tables.sql`          | `vehicle`, `payment`, `credit_card_payment`, `bank_transfer_payment`, `computer`, `mobile_phone`, `dog`, `cat`, `animal_seq`                       |
+| V8      | `jpa_other_tables.sql`                | `jpa_order_item` (composite PK), `product` (soft delete + audit)                                                                                   |
+| V9      | `stored_procedures.sql`               | 3 PostgreSQL functions: `get_total_employees`, `get_employee_count_by_dept`, `get_dept_salary_stats`                                               |
+| V10     | `additional_columns.sql`              | `ALTER TABLE product ADD COLUMN priority VARCHAR(20)` + `CREATE TABLE stock_item` (id, name, stock, deleted) + seed data                           |
+| V11     | `note_table_and_product_unique.sql`   | `note` table (Hibernate [`@SoftDelete`][SoftDelete] demo) + `UNIQUE (name)` constraint on `product` (upsert `ON CONFLICT` target)                  |
 | V12     | `fix_sequences_and_priority_case.sql` | `setval()` re-sync for `departments`/`employees` serials (seed data used explicit ids) + lowercase `product.priority` to match `PriorityConverter` |
-| V13     | `dept_stats_procedure.sql`    | `proc_dept_salary_stats` — a true `PROCEDURE` (IN + 3 OUT params) because Hibernate 6+ `CALL`s procedures, not functions     |
+| V13     | `dept_stats_procedure.sql`            | `proc_dept_salary_stats` — a true `PROCEDURE` (IN + 3 OUT params) because Hibernate 6+ `CALL`s procedures, not functions                           |
+| V14     | `employee_version_column.sql`         | `version` column on `employees` — the [`@Version`][Version] that `@Lock(OPTIMISTIC)` needs (§5.22)                                                 |
 
 ---
 
@@ -921,17 +876,19 @@ List<DepartmentEntity> findAllWithEmployees();
 | Scope          | Deletes ALL children when parent is deleted | Deletes only the child that was de-referenced |
 
 ```java
-// orphanRemoval in action
-Customer customer = repo.findById(1L);
-Order orderToRemove = customer.getOrders().get(0);
+// orphanRemoval in action (inside a @Transactional method)
+CustomerEntity customer = customerRepository.findByIdWithOrders(2L).orElseThrow();
+OrderEntity orderToRemove = customer.getOrders().get(0);
 customer.removeOrder(orderToRemove);
-// Hibernate issues DELETE for orderToRemove — orphanRemoval triggered
+// Hibernate issues DELETE for orderToRemove at flush — orphanRemoval triggered
 // The customer row is NOT deleted
 
 // CascadeType.REMOVE in action
-repo.delete(customer);
+customerRepository.delete(customer);
 // Hibernate deletes the customer AND all its orders
 ```
+
+With the seed data, try it on customer 2's order 3 (`DELETE /api/relationships/customers/2/orders/3`): orders 1 and 2 are referenced by `jpa_order_item` rows, so deleting them fails with a foreign-key violation (409).
 
 ---
 
@@ -1719,7 +1676,7 @@ WHERE e.first_name LIKE ?
 | Flexibility                       | Limited to simple paths    | Full JPQL control                           |
 | Best for                          | Clean repo APIs            | Complex multi-join queries                  |
 
-**Files:** `EmployeeEntity.java` (lines 22–26), `EmployeeRepository.java` (lines 49–54)
+**Files:** `EmployeeEntity.java` (lines 22–25), `EmployeeRepository.java` (lines 97–108)
 
 ---
 
@@ -1743,7 +1700,7 @@ sequenceDiagram
     Note over DB: Final salary = 52000 —\nTx A's +1000 raise is silently lost
 ```
 
-#### <span style="color:hsl(282,80%,58%)">Pessimistic Write — `SELECT FOR UPDATE`</span>
+#### <span style="color:hsl(282,80%,58%)">Pessimistic Write — `SELECT … FOR NO KEY UPDATE`</span>
 
 ```java
 @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -1751,12 +1708,14 @@ sequenceDiagram
 Optional<EmployeeEntity> findByIdForUpdate(@Param("id") Integer id);
 ```
 
-Generated SQL:
+Generated SQL (Hibernate 7 on PostgreSQL, as logged by `EmployeeLockingIT`):
 ```sql
-SELECT * FROM employees WHERE emp_id = ? FOR UPDATE
+select ee1_0.emp_id, …, ee1_0.version from employees ee1_0 where ee1_0.emp_id=? for no key update of ee1_0
 ```
 
-The row is locked the moment it is read. Any other transaction attempting to read-for-update (or write) that row will **block** until this transaction commits or rolls back. Use this when two concurrent transactions are likely to update the same row — e.g. account balance transfers.
+The row is locked the moment it is read. Any other transaction attempting to lock that row (`FOR UPDATE`, `FOR NO KEY UPDATE`, `FOR SHARE`) or to update or delete it will **block** until this transaction commits or rolls back. Use this when two concurrent transactions are likely to update the same row — e.g. account balance transfers.
+
+Hibernate's PostgreSQL dialect asks for `FOR NO KEY UPDATE`, the slightly weaker sibling of `FOR UPDATE` (other databases get `FOR UPDATE`): it blocks everything above but not the `FOR KEY SHARE` lock that foreign-key checks take, so inserting a row whose foreign key points at the locked row does not have to wait. It is the same row lock a plain `UPDATE` of non-key columns takes.
 
 ```mermaid
 sequenceDiagram
@@ -1764,9 +1723,9 @@ sequenceDiagram
     participant DB as PostgreSQL (row lock)
     participant TxB as Transaction B
 
-    TxA->>DB: SELECT ... FOR UPDATE (empId=5)
+    TxA->>DB: SELECT ... FOR NO KEY UPDATE (empId=5)
     DB-->>TxA: row locked, salary=50000
-    TxB->>DB: SELECT ... FOR UPDATE (empId=5)
+    TxB->>DB: SELECT ... FOR NO KEY UPDATE (empId=5)
     Note over TxB,DB: TxB blocks — row is already locked by TxA
     TxA->>DB: UPDATE salary = 51000
     TxA->>DB: COMMIT (lock released)
@@ -1786,10 +1745,10 @@ Optional<EmployeeEntity> findByIdForShare(@Param("id") Integer id);
 
 Generated SQL:
 ```sql
-SELECT * FROM employees WHERE emp_id = ? FOR SHARE
+select ee1_0.emp_id, …, ee1_0.version from employees ee1_0 where ee1_0.emp_id=? for share of ee1_0
 ```
 
-Multiple readers can hold a shared lock simultaneously. Writers (FOR UPDATE) are blocked until all shared locks are released. Use when you want to prevent writes while allowing concurrent reads.
+Multiple readers can hold a shared lock simultaneously. Writers (`UPDATE`, `DELETE`, `FOR UPDATE` / `FOR NO KEY UPDATE`) are blocked until all shared locks are released. Use when you want to prevent writes while allowing concurrent reads. PostgreSQL refuses row locks in a read-only transaction (`cannot execute SELECT FOR SHARE in a read-only transaction`), which is why `EmployeeService.readWithSharedLock` is `@Transactional` without `readOnly = true`.
 
 #### <span style="color:hsl(197,80%,58%)">Optimistic — version-based conflict detection</span>
 
@@ -1798,13 +1757,16 @@ Multiple readers can hold a shared lock simultaneously. Writers (FOR UPDATE) are
 Optional<EmployeeEntity> findByEmail(String email);
 ```
 
-No SQL-level lock is acquired at read time. Instead, Hibernate checks at commit time whether the [`@Version`][Version] column changed since you read the row. If it did (another transaction updated the row), Hibernate throws [`OptimisticLockException`][OptimisticLockException] and rolls back.
+No SQL-level lock is acquired at read time. Instead, Hibernate checks at commit time whether the [`@Version`][Version] column changed since you read the row — it re-reads it (`select version as version_ from employees where emp_id=?`) even though this transaction never modified the row. If it changed (another transaction updated the row), Hibernate throws [`OptimisticLockException`][OptimisticLockException] and rolls back.
 
 ```java
-// AuditableBase.java — the version field that powers optimistic locking
+// EmployeeEntity.java — the version field that powers optimistic locking (column added by V14;
+// ProductEntity inherits the same field from AuditableBase)
 @Version
 private Long version;
 ```
+
+Without a `@Version` attribute Hibernate refuses the lock mode outright (`Entity '…EmployeeEntity' has no version and may not be locked at level OPTIMISTIC`), which is why V14 adds the column.
 
 ```mermaid
 sequenceDiagram
@@ -1822,19 +1784,19 @@ sequenceDiagram
     DB-->>TxB: OptimisticLockException thrown, transaction rolls back
 ```
 
-Hibernate implements this by silently appending `AND version = ?` to every `UPDATE`/`DELETE` it issues for a `@Version`-annotated entity, and checking the affected-row count: if it's zero, someone else committed a change since you read the row, and Hibernate raises `OptimisticLockException` instead of silently applying a stale write.
+Hibernate implements this by silently appending `AND version = ?` to every `UPDATE`/`DELETE` it issues for a `@Version`-annotated entity, and checking the affected-row count: if it's zero, someone else committed a change since you read the row, and Hibernate raises `OptimisticLockException` instead of silently applying a stale write. JPQL bulk updates (§5.23) bypass this check and leave the version untouched.
 
 **Comparison:**
 
-|                     | Pessimistic Write            | Pessimistic Read                | Optimistic                            |
-|---------------------|------------------------------|---------------------------------|---------------------------------------|
-| SQL lock            | `FOR UPDATE`                 | `FOR SHARE`                     | None                                  |
-| Blocking            | Yes                          | Only for writers                | No                                    |
-| Failure point       | At read (waits or times out) | At read                         | At commit (`OptimisticLockException`) |
-| Best for            | High-contention writes       | Read-heavy, protect from writes | Low-contention, high-throughput       |
-| Requires `@Version` | No                           | No                              | Yes                                   |
+|                     | Pessimistic Write                                        | Pessimistic Read                | Optimistic                            |
+|---------------------|----------------------------------------------------------|---------------------------------|---------------------------------------|
+| SQL lock            | `FOR NO KEY UPDATE` (PostgreSQL), `FOR UPDATE` elsewhere | `FOR SHARE`                     | None                                  |
+| Blocking            | Yes                                                      | Only for writers                | No                                    |
+| Failure point       | At read (waits or times out)                             | At read                         | At commit (`OptimisticLockException`) |
+| Best for            | High-contention writes                                   | Read-heavy, protect from writes | Low-contention, high-throughput       |
+| Requires `@Version` | No                                                       | No                              | Yes                                   |
 
-**Files:** `EmployeeRepository.java` (lines 56–84), `AuditableBase.java`
+**Files:** `EmployeeRepository.java` (lines 119–139), `EmployeeEntity.java`, `EmployeeService.java`, `AuditableBase.java`
 
 ---
 
@@ -1884,13 +1846,13 @@ int purgeDeletedByCategory(@Param("category") String category);
 
 </ul>
 
-**Files:** `EmployeeRepository.java` (lines 96–110), `ProductRepository.java` (lines 42–62)
+**Files:** `EmployeeRepository.java` (lines 150–175), `ProductRepository.java` (lines 101–127)
 
 ---
 
 ### <span style="color:hsl(112,80%,58%)">5.24 @Transactional — Propagation, Isolation, rollbackFor, timeout</span>
 
-Spring's [`@Transactional`][Transactional] is more than "wrap this in a transaction." It controls seven distinct behaviors: propagation, isolation, rollback rules, timeout, and read-only hint.
+Spring's [`@Transactional`][Transactional] is more than "wrap this in a transaction." It controls five distinct behaviors: propagation, isolation, rollback rules, timeout, and the read-only flag.
 
 #### <span style="color:hsl(250,80%,58%)">Propagation — what happens when a transactional method calls another</span>
 
@@ -1923,7 +1885,7 @@ public void log(String message) {
 }
 ```
 
-The whole point of this pattern is that an audit trail must be trustworthy *especially* when the operation it's auditing failed. If `log()` simply joined the caller's transaction (the `REQUIRED` default), a rollback in `giveRaiseWithAudit` would erase the audit entry along with the salary update — the one situation where you most want a durable record of what was attempted.
+The whole point of this pattern is that an audit trail must be trustworthy *especially* when the operation it's auditing failed. If `log()` simply joined the caller's transaction (the `REQUIRED` default), a rollback in `giveRaiseWithAudit` would erase the audit entry along with the salary update — the one situation where you most want a durable record of what was attempted. (The demo's `AuditLogService.log()` only writes a log line; a real one would `INSERT` into an audit table inside that `REQUIRES_NEW` transaction, as the diagram shows.)
 
 ```mermaid
 sequenceDiagram
@@ -1976,7 +1938,7 @@ public void serializableExample() { ... }
 sequenceDiagram
     participant A as Tx A (READ_UNCOMMITTED)
     participant B as Tx B
-    Note over A,B: Dirty read — only possible under READ_UNCOMMITTED
+    Note over A,B: Dirty read — allowed by the standard under READ_UNCOMMITTED (never on PostgreSQL)
     B->>B: UPDATE employees SET salary=99999 (not yet committed)
     A->>A: SELECT salary → reads 99999
     B->>B: ROLLBACK
@@ -2005,7 +1967,16 @@ sequenceDiagram
     Note over A: Same predicate, same transaction,<br/>a new "phantom" row appeared
 ```
 
-PostgreSQL is worth calling out specifically here: its `REPEATABLE_READ` is implemented via snapshot isolation (MVCC), which in practice also prevents phantom reads for the simple case above — PostgreSQL's `REPEATABLE_READ` is actually stricter than the SQL standard requires (it's closer to "snapshot isolation"). The standard's anomaly table above describes the *worst case a standard-conforming database is allowed to exhibit* at each level, not necessarily what every specific engine does — the four [`Isolation`][Isolation] values are what Spring/JPA expose portably across databases, but always check your specific database's actual guarantees when it matters.
+PostgreSQL is worth calling out specifically here, because it is stricter than the table above in two places ([PostgreSQL docs, Table 13.1](https://www.postgresql.org/docs/18/transaction-iso.html)):
+
+<ul>
+
+- **`READ_UNCOMMITTED` behaves exactly like `READ_COMMITTED`.** PostgreSQL accepts the level but never returns uncommitted data, so the dirty read in the first diagram cannot happen here — `/api/transactions/isolation/read-uncommitted` runs a plain read-committed transaction.
+- **`REPEATABLE_READ` is snapshot isolation (MVCC)**, so phantom reads cannot happen either — the second `SELECT` in the phantom diagram still returns 3 rows. What it does allow is a *serialization anomaly* such as write skew (two transactions each check a condition, then write rows that together break it). Only `SERIALIZABLE` (Serializable Snapshot Isolation) detects that, aborting one transaction with a serialization failure (SQLSTATE `40001`) that the application must retry.
+
+</ul>
+
+The standard's anomaly table describes the *worst case a standard-conforming database is allowed to exhibit* at each level, not what every engine does — the four [`Isolation`][Isolation] values are what Spring/JPA expose portably across databases, so always check your database's actual guarantees when it matters.
 
 #### <span style="color:hsl(165,80%,58%)">rollbackFor / noRollbackFor</span>
 
@@ -2031,13 +2002,15 @@ public List<EmployeeEntity> timeoutExample() { ... }
 public List<EmployeeEntity> readOnlyExample() { ... }
 ```
 
+`timeout` is enforced per JDBC statement, not by a watchdog: Spring computes a deadline when the transaction starts, each query gets the *remaining* time as its JDBC query timeout, and a statement started after the deadline fails (`TransactionTimedOutException`). Time spent outside the database — a slow HTTP call, a `Thread.sleep` — is not interrupted; the transaction only fails at its next database access.
+
 `readOnly = true` benefits:
 
 <ul>
 
-- Hibernate skips dirty checking (no tracking what changed → faster).
-- Some JDBC drivers route the connection to a read-replica.
-- Acts as documentation — any accidental write will surface early in some providers.
+- Hibernate skips dirty checking (Spring switches the session to `FlushMode.MANUAL` and loads entities read-only) → less memory and CPU.
+- On PostgreSQL the flag is enforced by the server: Spring calls `Connection.setReadOnly(true)`, the PostgreSQL JDBC driver starts the transaction read-only, and any `INSERT`/`UPDATE`/`DELETE` or row lock fails with `cannot execute … in a read-only transaction`.
+- A routing `DataSource` (e.g. Spring's `AbstractRoutingDataSource` keyed on `TransactionSynchronizationManager.isCurrentTransactionReadOnly()`) can send such transactions to a read replica.
 
 </ul>
 
@@ -2056,9 +2029,9 @@ Introduced in **Spring Data JPA 3.1** (Spring Boot 3.1+). Provides cursor/keyset
 SELECT * FROM employees ORDER BY salary DESC LIMIT 10 OFFSET 1000
 ```
 
-The database must scan and discard the first 1000 rows on every page request. Cost is O(N) per page — gets exponentially slower as users scroll deeper.
+The database must scan and discard the first 1000 rows on every page request. Cost is O(N) per page — each page gets slower, linearly, the deeper users scroll.
 
-#### <span style="color:hsl(355,80%,58%)">Keyset pagination — O(1) per page</span>
+#### <span style="color:hsl(355,80%,58%)">Keyset pagination — cost independent of depth</span>
 
 Instead of skipping rows, the cursor remembers the sort key value of the last seen row and uses it as a `WHERE` predicate:
 
@@ -2066,11 +2039,13 @@ Instead of skipping rows, the cursor remembers the sort key value of the last se
 -- First page
 SELECT * FROM employees ORDER BY salary DESC LIMIT 10
 
--- Next page (cursor from last row: salary = 75000)
-SELECT * FROM employees WHERE salary < 75000 ORDER BY salary DESC LIMIT 10
+-- Next page (cursor from the last row: salary = 75000, emp_id = 2).
+-- Spring Data adds the id as a tie-breaker, so rows sharing salary 75000 are neither skipped nor repeated:
+SELECT * FROM employees WHERE salary < 75000 OR (salary = 75000 AND emp_id > 2)
+ORDER BY salary DESC, emp_id LIMIT 10
 ```
 
-The `WHERE salary < ?` clause uses the index directly — no scanning, no skipping.
+With an index on the sort keys (`salary, emp_id`) the `WHERE` clause becomes an index seek — no scanning, no skipping. (The demo tables are too small to need one, so they don't have it.)
 
 ```mermaid
 flowchart TB
@@ -2112,21 +2087,26 @@ if (first.hasNext()) {
 
 **Offset ScrollPosition** — same API, uses traditional OFFSET internally:
 ```java
-ScrollPosition position = ScrollPosition.offset(0);   // starts at beginning
-Window<ProductEntity> page = productRepository.findTop10ByDeletedFalse(position, sort);
+ScrollPosition position = ScrollPosition.offset();          // initial position — NOT offset(0)
+Window<ProductEntity> page = productRepository.findFirst10ByDeletedFalse(position, sort);
+ScrollPosition next = page.positionAt(page.size() - 1);    // offset(n) = "after row n" → OFFSET n + 1
 ```
+
+`ScrollPosition.offset(n)` means *after the element at index n* — Spring Data runs `OFFSET n + 1` — so `offset(0)` silently skips the first row. That is why `GET /api/products/scroll/offset` takes no parameter on the first call, then the `nextCursor.offset` it returned.
+
+Offset and keyset scrolling use **separate repository methods** (`findFirst10ByDeletedFalse` vs `findTop10ByDeletedFalse`) on purpose: Spring Data JPA 4.1 caches a derived query's SQL per (sort, which arguments are null) *before* it looks at the scroll type, so after one offset call, a keyset call on the same method reused `… ORDER BY price OFFSET ?` without its `WHERE` cursor and returned the wrong rows. `ProductScrollIT` pins both behaviours.
 
 **Comparison:**
 
-|                      | [`Page<T>`][Page] | `Slice<T>`  | `Window<T>` (keyset)            |
-|----------------------|-------------------|-------------|---------------------------------|
-| COUNT query          | Yes               | No          | No                              |
-| OFFSET scan          | Yes               | Yes         | No — uses WHERE cursor          |
-| Performance at depth | O(N)              | O(N)        | O(1)                            |
-| Random page access   | Yes               | No          | No — forward only               |
-| Best for             | Numbered pages    | "Load more" | Infinite scroll on large tables |
+|                      | [`Page<T>`][Page] | `Slice<T>`  | `Window<T>` (keyset)                   |
+|----------------------|-------------------|-------------|----------------------------------------|
+| COUNT query          | Yes               | No          | No                                     |
+| OFFSET scan          | Yes               | Yes         | No — uses WHERE cursor                 |
+| Performance at depth | O(N)              | O(N)        | Constant (index seek on the sort keys) |
+| Random page access   | Yes               | No          | No — forward only                      |
+| Best for             | Numbered pages    | "Load more" | Infinite scroll on large tables        |
 
-**Files:** `EmployeeRepository.java` (lines 133–148), `ProductRepository.java` (line 33), `ProductService.java` (lines 99–137)
+**Files:** `EmployeeRepository.java` (lines 228–243), `ProductRepository.java` (lines 80 and 90), `ProductService.java` (lines 106–148)
 
 ---
 
@@ -2189,7 +2169,7 @@ To see deleted rows you would need raw JDBC or a native query — there is no se
 
 **[`@SQLDelete`][SQLDelete] on both** — this annotation intercepts `repository.deleteById(id)` and replaces the SQL DELETE with an UPDATE. Without it, the row would be physically removed.
 
-**Files:** `ProductEntity.java`, `StockItemEntity.java`, `ProductService.java` (lines 32–55)
+**Files:** `ProductEntity.java`, `StockItemEntity.java`, `ProductService.java` (lines 32–60)
 
 ---
 
@@ -2265,7 +2245,7 @@ product table — priority column
 
 The converter is registered automatically by Spring; Hibernate calls `convertToDatabaseColumn` on every save and `convertToEntityAttribute` on every read.
 
-**Files:** `Priority.java`, `PriorityConverter.java`, `ProductEntity.java` (line 63), `V10__additional_columns.sql`
+**Files:** `Priority.java`, `PriorityConverter.java`, `ProductEntity.java` (line 68), `V10__additional_columns.sql`
 
 ---
 
@@ -2382,7 +2362,7 @@ All employees for all departments are loaded in one round-trip, regardless of ho
 
 `@BatchSize` and `@Fetch(SUBSELECT)` cannot be combined on the same collection — choose one.
 
-**Files:** `DepartmentEntity.java` (lines 60–63)
+**Files:** `DepartmentEntity.java` (lines 60–64)
 
 ---
 
@@ -2473,7 +2453,7 @@ private List<StudentEntity> students;
 | [`@JsonBackReference`][JsonBackReference]       | ManyToOne / child side    | Always excluded from JSON               |
 | [`@JsonIgnoreProperties`][JsonIgnoreProperties] | Either side of ManyToMany | Skips named property on the nested type |
 
-**Files:** `DepartmentEntity.java` (line 63), `EmployeeEntity.java` (line 80), `CustomerEntity.java`, `OrderEntity.java`, `StudentEntity.java`, `CourseEntity.java`
+**Files:** `DepartmentEntity.java` (line 63), `EmployeeEntity.java` (line 81), `CustomerEntity.java`, `OrderEntity.java`, `StudentEntity.java`, `CourseEntity.java`
 
 ---
 
@@ -2560,7 +2540,7 @@ spring.jpa.properties.hibernate:
   order_updates: true
 ```
 
-**Files:** `JdbcDemoService.java` (lines 109–152)
+**Files:** `JdbcDemoService.java` (lines 117–189)
 ---
 
 <a id="6-database-schema-overview"></a>
@@ -2585,6 +2565,7 @@ erDiagram
         varchar col_a "swap demo - Q7"
         varchar col_b "swap demo - Q7"
         int dept_id FK
+        bigint version "optimistic lock - V14"
     }
     EMP_TEST {
         varchar emp_name
@@ -2712,7 +2693,7 @@ erDiagram
 
 `computer`/`mobile_phone` and `dog`/`cat` are deliberately disconnected in this diagram — that disconnection *is* the point (§5.9): [`@MappedSuperclass`][MappedSuperclass] and `TABLE_PER_CLASS` both produce independent tables with no shared parent row to draw a relationship to.
 
-#### <span style="color:hsl(107,80%,58%)">Other JPA-concept tables (V8–V10)</span>
+#### <span style="color:hsl(107,80%,58%)">Other JPA-concept tables (V8–V11)</span>
 
 ```mermaid
 erDiagram
@@ -2724,13 +2705,14 @@ erDiagram
     }
     PRODUCT {
         bigint id PK
-        varchar name
+        varchar name "UNIQUE - upsert target, V11"
         numeric price
         varchar category
         varchar priority "low/normal/high - via AttributeConverter"
         boolean deleted "true = soft-deleted"
         varchar created_by
         timestamp created_date
+        varchar last_modified_by
         timestamp last_modified_date
         bigint version "optimistic lock"
     }
@@ -2740,9 +2722,15 @@ erDiagram
         int stock
         boolean deleted "always hidden via @SQLRestriction"
     }
+    NOTE {
+        bigint id PK
+        varchar title
+        text content
+        boolean deleted "managed by @SoftDelete, not mapped"
+    }
 ```
 
-`jpa_order_item`'s primary key is the *pair* `(order_id, product_code)` — there is no surrogate `id` column, which is exactly what forces the [`@EmbeddedId`][EmbeddedId] mapping in §5.13. `product` and `stock_item` look almost identical (both soft-deletable) but demonstrate the two different soft-delete mechanisms compared in §5.26.
+`jpa_order_item`'s primary key is the *pair* `(order_id, product_code)` — there is no surrogate `id` column, which is exactly what forces the [`@EmbeddedId`][EmbeddedId] mapping in §5.13. `product` and `stock_item` look almost identical (both soft-deletable) but demonstrate the two different soft-delete mechanisms compared in §5.26; `note` (V11) is the third style, Hibernate's [`@SoftDelete`][SoftDelete].
 
 ---
 
@@ -2750,8 +2738,11 @@ erDiagram
 ## <span style="color:hsl(245,80%,58%)">7. 🗄️ Connect to the Database</span>
 
 ```bash
-# psql CLI
-psql -h localhost -U postgres -d learningdb
+# psql CLI (the container publishes PostgreSQL on host port 5433)
+psql -h localhost -p 5433 -U postgres -d learningdb
+
+# …or without a local psql
+docker exec -it learning-db-postgres psql -U postgres -d learningdb
 
 # Verify all tables exist
 \dt
@@ -2764,7 +2755,7 @@ Or use a GUI client (DBeaver, DataGrip, TablePlus):
 
 ```
 Host:     localhost
-Port:     5432
+Port:     5433
 Database: learningdb
 User:     postgres
 Password: postgres
@@ -2775,7 +2766,7 @@ Password: postgres
 <a id="8-rest-api-endpoints"></a>
 ## <span style="color:hsl(22,80%,58%)">8. 🌐 REST API Endpoints</span>
 
-Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercised with `curl` while watching the SQL log (`show-sql=true`). One controller per feature area under `controller/`.
+Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercised with `curl` while watching the SQL log (`show-sql=true`). One controller per feature package (`employee/controller`, `product/controller`, …).
 
 ### <span style="color:hsl(160,80%,58%)">`/api/employees` — queries, projections, paging, locking, procedures</span>
 
@@ -2797,7 +2788,7 @@ Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercis
 | `PUT /api/employees/raise?deptId=&percentage=` | [`@Modifying`][Modifying] bulk UPDATE |
 | `PUT /api/employees/{id}/email?email=` | `@Modifying` single-column UPDATE |
 | `DELETE /api/employees/{id}/hard` | native hard DELETE |
-| `PUT /api/employees/{id}/salary-locked?salary=` | [`@Lock(PESSIMISTIC_WRITE)`][Lock] — `SELECT … FOR UPDATE` |
+| `PUT /api/employees/{id}/salary-locked?salary=` | [`@Lock(PESSIMISTIC_WRITE)`][Lock] — `SELECT … FOR NO KEY UPDATE` |
 | `GET /api/employees/{id}/shared-lock` | `@Lock(PESSIMISTIC_READ)` — `SELECT … FOR SHARE` |
 | `GET /api/employees/by-email?email=` | `@Lock(OPTIMISTIC)` |
 | `GET /api/employees/procedures/total-count` | [`@Procedure`][Procedure] + [`@NamedStoredProcedureQuery`][NamedStoredProcedureQuery] (function-call hint) |
@@ -2813,7 +2804,7 @@ Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercis
 | `GET /api/products/search?category=&minPrice=&maxPrice=&keyword=` | composed [`Specification`][Specification] (all params optional) |
 | `DELETE /api/products/{id}` | [`@SQLDelete`][SQLDelete] soft delete |
 | `GET /api/products/active` / `/deleted` | [`@Filter`][Filter] toggled per session |
-| `GET /api/products/page`, `/slice?category=`, `/scroll/offset`, `/scroll/keyset` | Page vs Slice vs offset/keyset [`Window`][Window] |
+| `GET /api/products/page`, `/slice?category=`, `/scroll/offset[?offset=]`, `/scroll/keyset[?lastPrice=&lastId=]` | Page vs Slice vs offset/keyset [`Window`][Window] (pass back `nextCursor`) |
 | `GET /api/products/high-priority` | [`@Convert`][Convert] / [`AttributeConverter`][AttributeConverter] (enum ↔ VARCHAR) |
 | `PUT /api/products/price-adjust?category=&factor=` | [`@Modifying`][Modifying] bulk UPDATE |
 | `DELETE /api/products/category/{c}` / `…/purge` | bulk soft delete (JPQL) / native purge |
@@ -2887,7 +2878,7 @@ Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercis
 [EmbeddedId]: https://github.com/jakartaee/persistence/blob/3.2-3.2.0-RELEASE/api/src/main/java/jakarta/persistence/EmbeddedId.java
 [EntityGraph]: https://github.com/spring-projects/spring-data-jpa/blob/4.1.1/spring-data-jpa/src/main/java/org/springframework/data/jpa/repository/EntityGraph.java
 [EnumType]: https://github.com/jakartaee/persistence/blob/3.2-3.2.0-RELEASE/api/src/main/java/jakarta/persistence/EnumType.java
-[Error]: https://github.com/openjdk/jdk/blob/jdk-25-ga/src/java.base/share/classes/java/lang/Error.java
+[Error]: https://github.com/openjdk/jdk/blob/jdk-27-ga/src/java.base/share/classes/java/lang/Error.java
 [Example]: https://github.com/spring-projects/spring-data-commons/blob/4.1.1/src/main/java/org/springframework/data/domain/Example.java
 [ExampleMatcher]: https://github.com/spring-projects/spring-data-commons/blob/4.1.1/src/main/java/org/springframework/data/domain/ExampleMatcher.java
 [Fetch]: https://github.com/hibernate/hibernate-orm/blob/7.4.5/hibernate-core/src/main/java/org/hibernate/annotations/Fetch.java
@@ -2908,7 +2899,7 @@ Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercis
 [JsonIgnoreProperties]: https://github.com/FasterXML/jackson-annotations/blob/jackson-annotations-2.21/src/main/java/com/fasterxml/jackson/annotation/JsonIgnoreProperties.java
 [JsonManagedReference]: https://github.com/FasterXML/jackson-annotations/blob/jackson-annotations-2.21/src/main/java/com/fasterxml/jackson/annotation/JsonManagedReference.java
 [LazyInitializationException]: https://github.com/hibernate/hibernate-orm/blob/7.4.5/hibernate-core/src/main/java/org/hibernate/LazyInitializationException.java
-[List]: https://github.com/openjdk/jdk/blob/jdk-25-ga/src/java.base/share/classes/java/util/List.java
+[List]: https://github.com/openjdk/jdk/blob/jdk-27-ga/src/java.base/share/classes/java/util/List.java
 [Lock]: https://github.com/spring-projects/spring-data-jpa/blob/4.1.1/spring-data-jpa/src/main/java/org/springframework/data/jpa/repository/Lock.java
 [ManyToMany]: https://github.com/jakartaee/persistence/blob/3.2-3.2.0-RELEASE/api/src/main/java/jakarta/persistence/ManyToMany.java
 [ManyToOne]: https://github.com/jakartaee/persistence/blob/3.2-3.2.0-RELEASE/api/src/main/java/jakarta/persistence/ManyToOne.java
@@ -2928,7 +2919,7 @@ Every JPA/JDBC feature in §5 is exposed as a REST endpoint so it can be exercis
 [ResultSetExtractor]: https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-jdbc/src/main/java/org/springframework/jdbc/core/ResultSetExtractor.java
 [RowCallbackHandler]: https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-jdbc/src/main/java/org/springframework/jdbc/core/RowCallbackHandler.java
 [RowMapper]: https://github.com/spring-projects/spring-framework/blob/v7.0.9/spring-jdbc/src/main/java/org/springframework/jdbc/core/RowMapper.java
-[RuntimeException]: https://github.com/openjdk/jdk/blob/jdk-25-ga/src/java.base/share/classes/java/lang/RuntimeException.java
+[RuntimeException]: https://github.com/openjdk/jdk/blob/jdk-27-ga/src/java.base/share/classes/java/lang/RuntimeException.java
 [ScrollPosition]: https://github.com/spring-projects/spring-data-commons/blob/4.1.1/src/main/java/org/springframework/data/domain/ScrollPosition.java
 [Session]: https://github.com/hibernate/hibernate-orm/blob/7.4.5/hibernate-core/src/main/java/org/hibernate/Session.java
 [Slice]: https://github.com/spring-projects/spring-data-commons/blob/4.1.1/src/main/java/org/springframework/data/domain/Slice.java

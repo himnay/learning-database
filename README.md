@@ -2,7 +2,7 @@
 
 <img src="image/spring-logo.png" alt="Spring" width="70"/> <img src="image/postgresql-logo.png" alt="PostgreSQL" width="70"/>
 
-A multi-module **Spring Boot + PostgreSQL 19** learning project. One shared database (`learningdb`, started via Docker Compose), one module per topic — each module owns its own schema, Flyway migrations, and README.
+A multi-module **Spring Boot + PostgreSQL 19 beta** learning project. One shared database (`learningdb`, started via Docker Compose), one module per topic — each module owns its own schema, Flyway migrations, and README.
 
 ![Architecture diagram](image/architecture-diagram.png)
 
@@ -21,13 +21,17 @@ A multi-module **Spring Boot + PostgreSQL 19** learning project. One shared data
 | Module                                     | Port | Schema   | What it covers                                                                                                                                                                                                                                                                         |
 |--------------------------------------------|------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [database-core](database-core/README.md)   | 8080 | `public` | SQL interview query problems (window functions, pivot, Nth-highest salary …) and a complete Spring Data JPA reference: relationships, cascades, inheritance strategies, projections, Specifications, auditing, soft delete, locking, [`@Transactional`][Transactional], JDBC, HikariCP |
-| [database-graph](database-graph/README.md) | 8081 | `graph`  | PostgreSQL 19 **SQL/PGQ** property graphs: `CREATE PROPERTY GRAPH`, `GRAPH_TABLE` / `MATCH` pattern queries, heterogeneous graphs, multiple labels, edge properties, and recursive-CTE fallbacks for variable-length paths                                                             |
+| [database-graph](database-graph/README.md) | 8081 | `graph`  | **SQL/PGQ** property graphs, available only in the PostgreSQL 19 betas up to 19beta3: `CREATE PROPERTY GRAPH`, `GRAPH_TABLE` / `MATCH` pattern queries, heterogeneous graphs, multiple labels, edge properties, and recursive-CTE fallbacks for variable-length paths                  |
+
+> ⚠️ SQL/PGQ was [reverted from PostgreSQL 19 in 19beta4](https://www.postgresql.org/about/news/postgresql-19-beta-4-released-3386/) (September 2026) and will not ship in the 19 release, so `docker-compose.yml` stays pinned to `postgres:19beta3`. `database-core` itself needs nothing newer than PostgreSQL 14.
 
 <a id="2-quick-start"></a>
 ## <span style="color:hsl(65,80%,50%)">2. 🚀 Quick Start</span>
 
+Needs JDK 27 (the build compiles for release 27, inherited from super-pom 1.2.0), Maven 3.9+ and Docker.
+
 ```bash
-# 1. Start PostgreSQL 19 (shared by all modules)
+# 1. Start PostgreSQL 19beta3 (shared by all modules)
 docker compose up -d
 
 # 2. Build everything

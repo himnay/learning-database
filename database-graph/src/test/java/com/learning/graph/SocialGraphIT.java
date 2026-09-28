@@ -13,8 +13,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Runs the Flyway migrations (CREATE PROPERTY GRAPH) and real GRAPH_TABLE / MATCH queries.
- * SQL/PGQ needs PostgreSQL 19 — still beta as of Sep 2026, so the image is pinned to the
- * same beta as docker-compose.yml.
+ * SQL/PGQ only exists in the PostgreSQL 19 betas up to 19beta3: it was reverted in 19beta4
+ * (Sep 2026) and will not ship in PostgreSQL 19, so the image is pinned to the same beta as
+ * docker-compose.yml.
  */
 @SpringBootTest
 @Testcontainers
