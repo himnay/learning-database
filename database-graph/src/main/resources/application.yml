@@ -1,3 +1,6 @@
+server:
+  port: 8081                          # database-core owns 8080
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5433/learningdb
@@ -17,6 +20,3 @@ spring:
     create-schemas: true
     baseline-on-migrate: true
     validate-on-migrate: true
-
-server:
-  port: 8081                          # database-core owns 8080

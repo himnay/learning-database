@@ -1,3 +1,6 @@
+server:
+  port: 8080
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5433/learningdb
@@ -36,6 +39,3 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: true         # fail fast if migration checksums don't match
-
-server:
-  port: 8080
