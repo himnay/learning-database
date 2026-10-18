@@ -17,8 +17,8 @@ import java.util.Map;
  * annotations actually apply — a self-call inside the service would bypass them.
  */
 @RestController
-@RequestMapping("/api/transactions")
 @RequiredArgsConstructor
+@RequestMapping("/api/transactions")
 public class TransactionController {
 
     private final TransactionDemoService transactionDemoService;

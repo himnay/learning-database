@@ -33,15 +33,15 @@ import java.math.BigDecimal;
  * but see CustomerEntity / OrderEntity for @JsonManagedReference / @JsonBackReference example.
  */
 @Entity
+@Getter
+@Setter
 @Table(name = "product")
+@Filter(name = "deletedProductFilter", condition = "deleted = :isDeleted")
 @SQLDelete(sql = "UPDATE product SET deleted = true WHERE id = ? AND version = ?")
 @FilterDef(
     name = "deletedProductFilter",
     parameters = @ParamDef(name = "isDeleted", type = Boolean.class)
 )
-@Getter
-@Setter
-@Filter(name = "deletedProductFilter", condition = "deleted = :isDeleted")
 public class ProductEntity extends AuditableBase {
 
     @Id

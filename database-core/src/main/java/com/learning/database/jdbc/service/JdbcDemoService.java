@@ -1,5 +1,8 @@
 package com.learning.database.jdbc.service;
 
+import com.learning.database.jdbc.dto.EmployeeRow;
+import com.learning.database.jdbc.dto.NewEmployee;
+import com.learning.database.jdbc.dto.ProductUpsertRow;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
@@ -32,8 +35,6 @@ public class JdbcDemoService {
 
     // ── RowMapper ─────────────────────────────────────────────────────────────
     // Use when: each row maps to one object, you want a List<T> back.
-
-    public record EmployeeRow(int id, String firstName, String lastName, double salary) {}
 
     public List<EmployeeRow> getAllEmployees() {
         RowMapper<EmployeeRow> mapper = (rs, rowNum) -> new EmployeeRow(
@@ -118,8 +119,6 @@ public class JdbcDemoService {
     // Far more efficient than calling jdbcTemplate.update() in a loop.
     // Sends multiple statements to the DB in a single round-trip.
 
-    public record NewEmployee(String firstName, String lastName, double salary, int deptId) {}
-
     /** Returns the batch insert employees. */
     @Transactional
     public int[][] batchInsertEmployees(List<NewEmployee> employees) {
@@ -154,8 +153,6 @@ public class JdbcDemoService {
     // ── batchUpdate — bulk UPSERT (PostgreSQL ON CONFLICT) ───────────────────
     // Bulk upsert: one batched statement per row, each atomically insert-or-update.
     // Requires unique constraint on product.name (V11).
-
-    public record ProductUpsertRow(String name, double price, String category) {}
 
     /** Bulk-upserts products; returns rows affected per statement. */
     @Transactional

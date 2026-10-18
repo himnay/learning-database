@@ -1,5 +1,10 @@
 package com.learning.database.relationship.controller;
 
+import com.learning.database.relationship.dto.CourseSummary;
+import com.learning.database.relationship.dto.EnrollmentCount;
+import com.learning.database.relationship.dto.NewCustomer;
+import com.learning.database.relationship.dto.NewOrder;
+import com.learning.database.relationship.dto.PersonSummary;
 import com.learning.database.relationship.entity.CourseEntity;
 import com.learning.database.relationship.entity.CustomerEntity;
 import com.learning.database.relationship.entity.OrderEntity;
@@ -17,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -32,8 +36,8 @@ import java.util.NoSuchElementException;
  * detail endpoints use the JOIN FETCH repository methods and return full entities.
  */
 @RestController
-@RequestMapping("/api/relationships")
 @RequiredArgsConstructor
+@RequestMapping("/api/relationships")
 public class RelationshipController {
 
     private final UserRepository userRepository;
@@ -41,12 +45,6 @@ public class RelationshipController {
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
     private final OrderItemRepository orderItemRepository;
-
-    public record PersonSummary(Long id, String name, String email) {}
-    public record CourseSummary(Long id, String title, String description) {}
-    public record EnrollmentCount(String title, Integer students) {}
-    public record NewOrder(String product, BigDecimal amount) {}
-    public record NewCustomer(String name, String email, List<NewOrder> orders) {}
 
     // ── @OneToOne: User ↔ Address ────────────────────────────────────────────
 
@@ -100,8 +98,8 @@ public class RelationshipController {
     }
 
     /** orphanRemoval demo: removing an order from the collection deletes its row. */
-    @DeleteMapping("/customers/{customerId}/orders/{orderId}")
     @Transactional
+    @DeleteMapping("/customers/{customerId}/orders/{orderId}")
     public CustomerEntity removeOrder(@PathVariable Long customerId, @PathVariable Long orderId) {
         CustomerEntity customer = customerRepository.findByIdWithOrders(customerId)
                 .orElseThrow(() -> new NoSuchElementException("Customer not found: " + customerId));
@@ -125,8 +123,8 @@ public class RelationshipController {
     }
 
     /** Enroll: modifies the owning side (student.courses) — inserts into the join table. */
-    @PostMapping("/students/{studentId}/courses/{courseId}")
     @Transactional
+    @PostMapping("/students/{studentId}/courses/{courseId}")
     public StudentEntity enroll(@PathVariable Long studentId, @PathVariable Long courseId) {
         StudentEntity student = studentRepository.findByIdWithCourses(studentId)
                 .orElseThrow(() -> new NoSuchElementException("Student not found: " + studentId));

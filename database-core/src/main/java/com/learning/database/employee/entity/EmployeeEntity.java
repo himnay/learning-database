@@ -26,13 +26,13 @@ import java.math.BigDecimal;
 // get_total_employees is a PostgreSQL FUNCTION, not a PROCEDURE — Hibernate 6 would
 // otherwise emit `CALL get_total_employees()` and Postgres rejects it (SQLState 42809).
 // The org.hibernate.callableFunction hint makes Hibernate treat it as a function call.
+@Getter
+@Setter
 @NamedStoredProcedureQuery(
     name = "Employee.getTotalCount",
     procedureName = "get_total_employees",
     hints = @QueryHint(name = "org.hibernate.callableFunction", value = "true")
 )
-@Getter
-@Setter
 public class EmployeeEntity {
 
     @Id

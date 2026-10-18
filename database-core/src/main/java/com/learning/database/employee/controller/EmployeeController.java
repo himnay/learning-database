@@ -1,5 +1,6 @@
 package com.learning.database.employee.controller;
 
+import com.learning.database.employee.dto.WindowResponse;
 import com.learning.database.employee.entity.EmployeeEntity;
 import com.learning.database.employee.projection.EmployeeNameView;
 import com.learning.database.employee.projection.EmployeeSummaryDTO;
@@ -32,16 +33,13 @@ import java.util.Map;
  * window functions.
  */
 @RestController
-@RequestMapping("/api/employees")
 @RequiredArgsConstructor
+@RequestMapping("/api/employees")
 public class EmployeeController {
 
     private final EmployeeRepository employeeRepository;
     private final EmployeeService employeeService;
     private final ProductService productService;
-
-    /** Window<T> flattened for JSON: content + hasNext + cursor for the next request. */
-    public record WindowResponse<T>(List<T> content, boolean hasNext, Map<String, Object> nextCursor) {}
 
     public static <T> WindowResponse<T> toResponse(Window<T> window) {
         Map<String, Object> cursor = null;

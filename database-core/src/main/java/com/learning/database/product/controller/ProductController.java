@@ -6,7 +6,7 @@ import com.learning.database.product.repository.ProductRepository;
 import com.learning.database.product.service.ProductService;
 
 import com.learning.database.employee.controller.EmployeeController;
-import com.learning.database.employee.controller.EmployeeController.WindowResponse;
+import com.learning.database.employee.dto.WindowResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.ScrollPosition;
@@ -24,8 +24,8 @@ import java.util.Map;
  * etc. visible in every response), optimistic locking (version field).
  */
 @RestController
-@RequestMapping("/api/products")
 @RequiredArgsConstructor
+@RequestMapping("/api/products")
 public class ProductController {
 
     private final ProductService productService;

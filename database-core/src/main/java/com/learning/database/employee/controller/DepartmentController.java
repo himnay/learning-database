@@ -1,5 +1,6 @@
 package com.learning.database.employee.controller;
 
+import com.learning.database.employee.dto.DepartmentSummary;
 import com.learning.database.employee.entity.DepartmentEntity;
 import com.learning.database.employee.repository.DepartmentRepository;
 
@@ -14,8 +15,8 @@ import java.util.List;
  * (open-in-view=false, so lazy access after the tx would throw).
  */
 @RestController
-@RequestMapping("/api/departments")
 @RequiredArgsConstructor
+@RequestMapping("/api/departments")
 public class DepartmentController {
 
     private final DepartmentRepository departmentRepository;
@@ -36,7 +37,4 @@ public class DepartmentController {
                 .map(d -> new DepartmentSummary(d.getDeptId(), d.getDeptName()))
                 .orElse(null);
     }
-
-    /** Summary DTO — employees not fetched by findByDeptNameIgnoreCase, so don't serialize the entity. */
-    public record DepartmentSummary(Integer deptId, String deptName) {}
 }

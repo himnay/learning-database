@@ -28,8 +28,8 @@ import java.util.List;
  * Watch the SQL log (show-sql=true) while hitting these to see the difference.
  */
 @RestController
-@RequestMapping("/api/inheritance")
 @RequiredArgsConstructor
+@RequestMapping("/api/inheritance")
 public class InheritanceController {
 
     private final VehicleRepository vehicleRepository;

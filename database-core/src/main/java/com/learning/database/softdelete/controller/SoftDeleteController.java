@@ -22,8 +22,8 @@ import java.util.Map;
  * automatically exclude deleted rows — no filter toggling possible.
  */
 @RestController
-@RequestMapping("/api/soft-delete")
 @RequiredArgsConstructor
+@RequestMapping("/api/soft-delete")
 public class SoftDeleteController {
 
     private final StockItemRepository stockItemRepository;

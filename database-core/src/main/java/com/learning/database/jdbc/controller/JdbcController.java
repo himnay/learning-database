@@ -1,10 +1,9 @@
 package com.learning.database.jdbc.controller;
 
+import com.learning.database.jdbc.dto.EmployeeRow;
+import com.learning.database.jdbc.dto.NewEmployee;
+import com.learning.database.jdbc.dto.ProductUpsertRow;
 import com.learning.database.jdbc.service.JdbcDemoService;
-
-import com.learning.database.jdbc.service.JdbcDemoService.EmployeeRow;
-import com.learning.database.jdbc.service.JdbcDemoService.NewEmployee;
-import com.learning.database.jdbc.service.JdbcDemoService.ProductUpsertRow;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,8 +17,8 @@ import java.util.Map;
  * batchUpdate (insert / update / upsert).
  */
 @RestController
-@RequestMapping("/api/jdbc")
 @RequiredArgsConstructor
+@RequestMapping("/api/jdbc")
 public class JdbcController {
 
     private final JdbcDemoService jdbcDemoService;
